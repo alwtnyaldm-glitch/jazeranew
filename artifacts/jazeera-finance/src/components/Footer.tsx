@@ -42,7 +42,7 @@ export default function Footer({ settings }: FooterProps) {
             <ul className="space-y-2 text-white/60 text-sm">
               <li>{settings?.contactPhone || "920000000"}</li>
               <li>{settings?.contactEmail || "info@aljazeera-finance.com"}</li>
-              <li>{settings?.contactAddress || "الرياض، المملكة العربية السعودية"}</li>
+              <li>{settings?.contactAddress || "الدوحة،   "}</li>
             </ul>
           </div>
         </div>
