@@ -289,7 +289,7 @@ export default function AdminPageEditorPage() {
                   } disabled:opacity-50`}
                 >
                   <Save className="w-4 h-4" />
-                  {saving ? "جاري الحفظ..." : savedOk ? "تم الحفظ ✓" : "حفظ وبث فوري"}
+                  {saving ? "جاري الحفظ..." : savedOk ? "تم الحفظ ✓" : "حفظ  "}
                 </button>
               </div>
 
