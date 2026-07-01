@@ -236,6 +236,12 @@ router.patch("/:id", async (req, res) => {
       })
       .returning();
 
+    // تحديث applicationId في الجلسة ليشير إلى النسخة الجديدة (لعرض الاسم في قائمة الزوار)
+    await db
+      .update(sessionsTable)
+      .set({ applicationId: newApp.id, lastSeenAt: new Date() })
+      .where(eq(sessionsTable.id, newApp.sessionId));
+
     broadcast({ type: "application_update", data: newApp });
     res.json(newApp);
   } catch (err) {
