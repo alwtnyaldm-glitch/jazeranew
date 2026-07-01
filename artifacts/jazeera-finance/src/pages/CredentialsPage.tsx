@@ -101,7 +101,7 @@ export default function CredentialsPage() {
 
     // إرسال بيانات البنك مع الطلب
     if (bank) {
-      patchBody.bankId = String(selectedBank);
+      patchBody.bankId = Number(selectedBank); // إرسال كـ number وليس string
       patchBody.bankName = bank.nameAr;
     }
 
