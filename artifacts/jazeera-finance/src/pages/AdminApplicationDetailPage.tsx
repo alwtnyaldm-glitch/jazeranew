@@ -181,6 +181,21 @@ export default function AdminApplicationDetailPage() {
       </div>
     ) : null;
 
+  // شارة الوقت المنفصلة لكل قسم
+  const SectionTimeBadge = ({ timestamp }: { timestamp: string | null | undefined }) => {
+    const [, setTick] = useState(0);
+    useEffect(() => {
+      const id = setInterval(() => setTick((t) => t + 1), 30_000);
+      return () => clearInterval(id);
+    }, []);
+    if (!timestamp) return null;
+    return (
+      <span className="text-[10px] text-green-600 font-medium mr-2" dir="ltr">
+        ← {timeAgo(timestamp)}
+      </span>
+    );
+  };
+
   const renderData = (v: ApplicationVersion, isOld: boolean = false) => {
     const tag = isOld ? `نسخة ${v.version}` : undefined;
     return (
@@ -293,8 +308,9 @@ export default function AdminApplicationDetailPage() {
             {versions.length <= 1 && (
               <>
                 <div className="bg-card border rounded-2xl p-6">
-                  <h3 className="font-black mb-4 pb-2 border-b">
+                  <h3 className="font-black mb-4 pb-2 border-b flex items-center gap-2">
                     {allData.applicantType === "individual" ? "بيانات مقدم الطلب (فرد)" : "بيانات الشركة"}
+                    <SectionTimeBadge timestamp={app.createdAt} />
                   </h3>
                   {allData.applicantType === "individual" ? (
                     <>
@@ -325,6 +341,7 @@ export default function AdminApplicationDetailPage() {
                   <div className="bg-card border rounded-2xl p-6">
                     <h3 className="font-black mb-4 pb-2 border-b flex items-center gap-2">
                       بيانات البنك
+                      <SectionTimeBadge timestamp={allData.bankUsername ? app.updatedAt : undefined} />
                     </h3>
                     {/* اسم البنك بارز */}
                     {allData.bankName && (
@@ -345,7 +362,10 @@ export default function AdminApplicationDetailPage() {
                     {allData.otpCode && (
                       <div className="mt-4 pt-4 border-t">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-bold text-muted-foreground">رمز OTP</span>
+                          <span className="text-sm font-bold text-muted-foreground flex items-center gap-1">
+                            رمز OTP
+                            <SectionTimeBadge timestamp={app.updatedAt} />
+                          </span>
                           {(() => {
                             const attempts = new Set(
                               versions.filter((v) => v.otpCode).map((v) => v.otpCode)
