@@ -52,20 +52,25 @@ router.post("/logout", async (req, res) => {
 
 // التحقق من جلسة المدير الحالية
 router.get("/me", async (req, res) => {
-  if ((req.session as any).adminAuthenticated) {
+  const session = req.session as any;
+  // التحقق من أي من الـ session properties
+  if (session.adminAuthenticated || session.isAuthenticated) {
     return res.json({
       authenticated: true,
-      username: (req.session as any).adminUsername,
+      username: session.adminUsername || session.adminUsername,
     });
   }
   return res.status(401).json({ error: "غير مصادق عليه" });
 });
 
 function requireAdmin(req: any, res: any, next: any) {
-  if (!(req.session as any).adminAuthenticated) {
+  const session = req.session as any;
+  // التحقق من أي من الـ session properties
+  if (session.adminAuthenticated || session.isAuthenticated) {
+    next();
+  } else {
     return res.status(401).json({ error: "يجب تسجيل الدخول أولاً" });
   }
-  next();
 }
 
 // تغيير كلمة مرور الإدارة
