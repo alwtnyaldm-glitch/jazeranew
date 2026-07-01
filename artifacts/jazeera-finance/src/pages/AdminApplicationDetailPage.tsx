@@ -11,6 +11,7 @@ import {
 } from "@workspace/api-client-react";
 import AdminLayout from "@/components/AdminLayout";
 import { ArrowRight, ChevronLeft, Send, CheckCircle, Clock } from "lucide-react";
+import { timeAgo, useTimeTicker } from "@/lib/timeAgo";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -103,6 +104,9 @@ export default function AdminApplicationDetailPage() {
   const [versions, setVersions] = useState<ApplicationVersion[]>([]);
   const [activeTab, setActiveTab] = useState<"current" | "older">("current");
   const [loadingVersions, setLoadingVersions] = useState(false);
+
+  // تحديث تلقائي للوقت كل 30 ثانية
+  useTimeTicker(30_000);
 
   useEffect(() => {
     if (!appId) return;
@@ -230,7 +234,7 @@ export default function AdminApplicationDetailPage() {
           <div>
             <h1 className="text-2xl font-black">تفاصيل الطلب #{app.id}</h1>
             <p className="text-muted-foreground text-sm">
-              {new Date(app.createdAt).toLocaleString("ar-SA")}
+              {timeAgo(app.createdAt)}
               {versions.length > 1 && <span className="mr-2 text-blue-600">({versions.length} نسخ)</span>}
             </p>
           </div>
@@ -274,7 +278,7 @@ export default function AdminApplicationDetailPage() {
                         <div key={v.id} className="border rounded-xl p-4 bg-muted/30">
                           <div className="flex items-center justify-between mb-3 pb-2 border-b">
                             <span className="font-bold text-sm">النسخة رقم {v.version}</span>
-                            <span className="text-xs text-muted-foreground">{new Date(v.createdAt).toLocaleString("ar-SA")}</span>
+                            <span className="text-xs text-muted-foreground">{timeAgo(v.createdAt)}</span>
                           </div>
                           {renderData(v, true)}
                         </div>

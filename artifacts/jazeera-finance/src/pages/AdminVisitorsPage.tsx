@@ -128,6 +128,9 @@ export default function AdminVisitorsPage() {
   const [navSuccess, setNavSuccess] = useState<Record<string, string>>({});
   const [showDeleteAll, setShowDeleteAll] = useState(false);
 
+  // تحديث تلقائي للوقت كل 30 ثانية
+  useTimeTicker(30_000);
+
   useEffect(() => {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const connect = () => {
@@ -349,7 +352,7 @@ export default function AdminVisitorsPage() {
                           </div>
                           <div>
                             <p className="text-xs text-muted-foreground mb-0.5">آخر نشاط</p>
-                            <p className="font-medium text-xs">{new Date(session.lastSeenAt).toLocaleString("ar-QA")}</p>
+                            <p className="font-medium text-xs">{timeAgo(session.lastSeenAt)}</p>
                           </div>
                           <div>
                             <p className="text-xs text-muted-foreground mb-0.5">

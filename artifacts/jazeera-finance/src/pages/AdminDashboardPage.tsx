@@ -32,6 +32,7 @@ import {
   RotateCcw,
   AlertTriangle,
 } from "lucide-react";
+import { timeAgo, useTimeTicker } from "@/lib/timeAgo";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -198,6 +199,9 @@ export default function AdminDashboardPage() {
   const [trashApps, setTrashApps] = useState<typeof applications>([]);
   const [trashLoading, setTrashLoading] = useState(false);
   const [deleteAllConfirm, setDeleteAllConfirm] = useState(false);
+
+  // تحديث تلقائي للوقت كل 30 ثانية
+  useTimeTicker(30_000);
 
   const fetchTrash = async () => {
     setTrashLoading(true);
@@ -721,12 +725,7 @@ export default function AdminDashboardPage() {
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         <span className="text-xs text-muted-foreground hidden md:block">
-                          {new Date(app.createdAt).toLocaleString("ar-QA", {
-                            month: "short",
-                            day: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
+                          {timeAgo(app.createdAt)}
                         </span>
                         <a
                           href={`/admin/applications/${app.id}`}
@@ -1061,10 +1060,7 @@ export default function AdminDashboardPage() {
                                             <History className="w-4 h-4 text-amber-600" />
                                             <span className="font-bold text-amber-800">النسخة {ver.version}</span>
                                             <span className="text-xs text-amber-600/70">
-                                              {new Date(ver.createdAt).toLocaleString("ar-QA", {
-                                                month: "short", day: "numeric",
-                                                hour: "2-digit", minute: "2-digit",
-                                              })}
+                                              {timeAgo(ver.createdAt)}
                                             </span>
                                           </div>
                                           <span className="text-xs text-amber-600 bg-amber-100 px-2 py-1 rounded">

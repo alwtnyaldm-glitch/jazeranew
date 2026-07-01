@@ -2,6 +2,7 @@
 import { useState } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { Trash2, RotateCcw, X, Lock, Eye, EyeOff, AlertTriangle, User, UserX } from "lucide-react";
+import { timeAgo, useTimeTicker } from "@/lib/timeAgo";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -53,6 +54,9 @@ export default function AdminTrashPage() {
   const [trashLoading, setTrashLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
   const [showEmptyAll, setShowEmptyAll] = useState(false);
+
+  // تحديث تلقائي للوقت كل 30 ثانية
+  useTimeTicker(30_000);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -258,7 +262,7 @@ export default function AdminTrashPage() {
                         <div className="flex items-center gap-4 text-xs text-muted-foreground">
                           <span>{session.country || "غير معروف"}</span>
                           <span>{session.ipAddress || "—"}</span>
-                          <span>حُذف: {new Date(session.deletedAt).toLocaleString("ar-QA")}</span>
+                          <span>حُذف: {timeAgo(session.deletedAt)}</span>
                         </div>
                       </div>
 

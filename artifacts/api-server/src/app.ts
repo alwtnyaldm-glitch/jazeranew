@@ -53,7 +53,7 @@ app.use(
 // Serve static files from jazeera-finance frontend
 const frontendPath = process.env.NODE_ENV === "production"
   ? path.resolve("/app/artifacts/jazeera-finance/dist/public")
-  : path.resolve(__dirname, "..", "jazeera-finance", "dist", "public");
+  : path.resolve("/workspace/project/newjazera2/artifacts/jazeera-finance/dist/public");
 app.use(express.static(frontendPath));
 
 // Serve API routes
