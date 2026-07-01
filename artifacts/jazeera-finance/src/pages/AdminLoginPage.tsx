@@ -1,7 +1,7 @@
 // صفحة تسجيل دخول المدير مع الأجهزة الموثوقة
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { useAdminLogin, useGetAdminMe } from "@workspace/api-client-react";
+import { useGetAdminMe } from "@workspace/api-client-react";
 import { Building2, Lock, User, Eye, EyeOff, ShieldCheck, Smartphone, CheckCircle, Bell } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -52,7 +52,6 @@ export default function AdminLoginPage() {
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>(
     typeof Notification !== "undefined" ? Notification.permission : "default"
   );
-  const login = useAdminLogin();
   const deviceId = getDeviceId();
   const deviceInfo = getDeviceInfo();
 
@@ -213,9 +212,24 @@ export default function AdminLoginPage() {
     setTrusting(true);
     
     try {
-      await login.mutateAsync({ data: { username, password } });
+      // ─── الخطوة 1: تسجيل الدخول ───────────────────────────────────────────
+      console.log("[Login] Step 1: Logging in...");
+      const loginRes = await fetch(`${BASE}/api/auth/login`, {
+        method: "POST",
+        credentials: "include", // مهم جداً لحفظ الـ cookie
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
       
-      // تسجيل الجهاز كجهاز موثوق
+      if (!loginRes.ok) {
+        throw new Error("بيانات الدخول غير صحيحة");
+      }
+      
+      const loginData = await loginRes.json();
+      console.log("[Login] Login successful:", loginData);
+      
+      // ─── الخطوة 2: تسجيل الجهاز كجهاز موثوق ───────────────────────────────
+      console.log("[Login] Step 2: Registering device...");
       await fetch(`${BASE}/api/auth/devices/trust`, {
         method: "POST",
         credentials: "include",
@@ -228,18 +242,22 @@ export default function AdminLoginPage() {
           os: deviceInfo.os,
         }),
       });
+      console.log("[Login] Device registered");
       
-      // الاشتراك في Push (إذا لم يكن مفعلاً)
+      // ─── الخطوة 3: الاشتراك في Push ───────────────────────────────────────
+      console.log("[Login] Step 3: Subscribing to push...");
       if (notificationPermission !== "granted") {
         await handleEnableNotifications();
       } else {
         await subscribeToPush();
       }
+      console.log("[Login] Push subscription complete");
       
       setTrusted(true);
       navigate("/admin/dashboard");
-    } catch {
-      setError("اسم المستخدم أو كلمة المرور غير صحيحة");
+    } catch (err) {
+      console.error("[Login] Error:", err);
+      setError(err instanceof Error ? err.message : "اسم المستخدم أو كلمة المرور غير صحيحة");
     } finally {
       setTrusting(false);
     }
