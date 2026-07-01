@@ -1,5 +1,5 @@
 // تخطيط لوحة الإدارة مع الشريط الجانبي — متجاوب مع الجوال
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useAdminLogout, useGetAdminMe } from "@workspace/api-client-react";
 import { useEffect, useState } from "react";
 import {
@@ -95,7 +95,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {navItems.map((item) => {
             const isActive = location === item.href || location.startsWith(item.href + "/");
             return (
-              <a
+              <Link
                 key={item.href}
                 href={item.href}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-sm font-medium ${
@@ -106,13 +106,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               >
                 {item.icon}
                 {item.label}
-              </a>
+              </Link>
             );
           })}
 
           {/* سلة المهملات */}
           <div className="pt-2 mt-2 border-t border-sidebar-border">
-            <a
+            <Link
               href="/admin/trash"
               className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-sm font-medium ${
                 location === "/admin/trash"
@@ -122,19 +122,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             >
               <Trash2 className="w-5 h-5" />
               سلة المهملات
-            </a>
+            </Link>
           </div>
         </nav>
 
         {/* أسفل الشريط */}
         <div className="p-4 border-t border-sidebar-border space-y-2">
-          <a
+          <Link
             href="/"
             className="flex items-center gap-3 px-4 py-2 rounded-xl text-sidebar-foreground/60 hover:bg-sidebar-accent transition-colors text-sm"
           >
             <Wifi className="w-4 h-4" />
             الموقع الرئيسي
-          </a>
+          </Link>
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-2 rounded-xl text-destructive hover:bg-destructive/10 transition-colors text-sm"
