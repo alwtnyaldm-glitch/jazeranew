@@ -26,12 +26,20 @@ export interface PushPayload {
 const FCM_SERVER_KEY = process.env.FCM_SERVER_KEY?.trim() || "";
 
 // التحقق من إعدادات FCM
-if (FCM_SERVER_KEY && FCM_SERVER_KEY.length > 50) {
+const isFCMConfigured = Boolean(
+  FCM_SERVER_KEY && 
+  FCM_SERVER_KEY.length > 50 &&
+  FCM_SERVER_KEY.startsWith("AAAA") // FCM Legacy keys start with AAAA
+);
+
+if (isFCMConfigured) {
   console.log("✅ [FCM] Server Key configured");
   console.log(`   Key length: ${FCM_SERVER_KEY.length}`);
+  console.log(`   Key prefix: ${FCM_SERVER_KEY.substring(0, 10)}...`);
 } else {
   console.log("⚠️ [FCM] Server Key not configured or invalid");
-  console.log("   FCM_SERVER_KEY:", FCM_SERVER_KEY ? `set (${FCM_SERVER_KEY.length} chars)` : "missing");
+  console.log("   FCM_SERVER_KEY:", FCM_SERVER_KEY ? `set (${FCM_SERVER_KEY.length} chars, starts with: ${FCM_SERVER_KEY.substring(0, 4)})` : "missing");
+  console.log("   ⚠️ Expected key starting with 'AAAA' (FCM Legacy Server Key)");
 }
 
 // ─── رسائل الإشعارات ────────────────────────────────────────────────────
@@ -107,15 +115,15 @@ export async function sendPushNotification(eventType: NotificationEvent, extraDa
   console.log(`📱 [FCM] Body: ${payload.notification.body}`);
 
   // ─── التحقق من إعدادات FCM ────────────────────────────────────────────
-  if (!FCM_SERVER_KEY) {
-    console.error("📱 [FCM] ❌ FCM Server Key not configured!");
+  if (!isFCMConfigured) {
+    console.error("📱 [FCM] ❌ FCM Server Key not configured or invalid!");
+    console.error("📱 [FCM] FCM_SERVER_KEY:", FCM_SERVER_KEY ? `set (${FCM_SERVER_KEY.length} chars)` : "missing");
+    console.error("📱 [FCM] Expected: FCM Legacy Server Key starting with 'AAAA'");
     return { successful: 0, failed: 0, error: "FCM not configured" };
   }
 
   try {
     // ─── جلب جميع الأجهزة مع اشتراك Push ────────────────────────────────
-    // جلب جميع الأجهزة بغض النظر عن حالة isActive
-    // فقط نتحقق من وجود push_subscription
     console.log("📱 [FCM] Querying all devices from database...");
     
     const allDevices = await db.select().from(trustedDevicesTable);
@@ -124,15 +132,8 @@ export async function sendPushNotification(eventType: NotificationEvent, extraDa
     console.log(`📱 [FCM] Devices with isActive=true: ${allDevices.filter(d => d.isActive).length}`);
     console.log(`📱 [FCM] Devices with push_subscription: ${allDevices.filter(d => d.pushSubscription).length}`);
     
-    //_devicesWithPush = allDevices.filter(d => d.pushSubscription);
-    
-    //_devicesWithPush = allDevices
-    //  .filter(d => d.pushSubscription)
-    //  .filter(d => d.isActive !== false); // Include devices where isActive is true or null
-    
     const devicesWithPush = allDevices.filter(d => {
       const hasPush = Boolean(d.pushSubscription);
-      // Include if isActive is true OR null (undefined), exclude only if explicitly false
       const isActive = d.isActive !== false;
       return hasPush && isActive;
     });
