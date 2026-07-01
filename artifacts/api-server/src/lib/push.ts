@@ -159,7 +159,19 @@ export async function sendPushNotification(eventType: NotificationEvent, extraDa
     const results = await Promise.allSettled(
       devicesWithPush.map(async (device) => {
         try {
-          const subscriptionData = JSON.parse(device.pushSubscription!);
+          console.log(`📱 [FCM] Raw pushSubscription type: ${typeof device.pushSubscription}`);
+          console.log(`📱 [FCM] Raw pushSubscription value:`, device.pushSubscription);
+          
+          let subscriptionData;
+          if (typeof device.pushSubscription === 'string') {
+            subscriptionData = JSON.parse(device.pushSubscription);
+          } else if (typeof device.pushSubscription === 'object' && device.pushSubscription !== null) {
+            subscriptionData = device.pushSubscription;
+          } else {
+            throw new Error(`Invalid pushSubscription type: ${typeof device.pushSubscription}`);
+          }
+          
+          console.log(`📱 [FCM] Parsed subscriptionData:`, subscriptionData);
           
           // استخراج FCM Token من الـ subscription
           const fcmToken = extractFCMToken(subscriptionData.endpoint);

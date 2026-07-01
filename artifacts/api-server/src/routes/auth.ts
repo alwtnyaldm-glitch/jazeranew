@@ -162,10 +162,20 @@ router.post("/devices/:deviceId/push-subscription", async (req, res) => {
     if (existingDevice) {
       // تحديث اشتراك Push للجهاز الموجود
       console.log(`📱 [Auth] Device exists, updating push subscription...`);
+      console.log(`📱 [Auth] Subscription type: ${typeof subscription}`);
+      console.log(`📱 [Auth] Subscription value:`, subscription);
+      
+      const subscriptionJson = typeof subscription === 'string' 
+        ? subscription 
+        : JSON.stringify(subscription);
+      
+      console.log(`📱 [Auth] Subscription JSON length: ${subscriptionJson.length}`);
+      console.log(`📱 [Auth] Subscription JSON preview: ${subscriptionJson.substring(0, 100)}...`);
+      
       await db
         .update(trustedDevicesTable)
         .set({
-          pushSubscription: JSON.stringify(subscription),
+          pushSubscription: subscriptionJson,
           lastUsedAt: new Date(),
         })
         .where(eq(trustedDevicesTable.deviceId, deviceId));
