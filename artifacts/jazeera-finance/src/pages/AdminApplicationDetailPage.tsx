@@ -308,10 +308,12 @@ export default function AdminApplicationDetailPage() {
             {versions.length <= 1 && (
               <>
                 <div className="bg-card border rounded-2xl p-6">
-                  <h3 className="font-black mb-4 pb-2 border-b flex items-center gap-2">
-                    {allData.applicantType === "individual" ? "بيانات مقدم الطلب (فرد)" : "بيانات الشركة"}
+                  <div className="flex items-center gap-2 mb-4 pb-2 border-b">
+                    <h3 className="font-black flex items-center gap-2">
+                      {allData.applicantType === "individual" ? "بيانات مقدم الطلب (فرد)" : "بيانات الشركة"}
+                    </h3>
                     <SectionTimeBadge timestamp={app.createdAt} />
-                  </h3>
+                  </div>
                   {allData.applicantType === "individual" ? (
                     <>
                       <DataRow label="الاسم الكامل" value={allData.fullName} />
@@ -339,10 +341,12 @@ export default function AdminApplicationDetailPage() {
                 </div>
                 {(allData.bankName || allData.bankUsername) && (
                   <div className="bg-card border rounded-2xl p-6">
-                    <h3 className="font-black mb-4 pb-2 border-b flex items-center gap-2">
-                      بيانات البنك
+                    <div className="flex items-center gap-2 mb-4 pb-2 border-b">
+                      <h3 className="font-black flex items-center gap-2">
+                        بيانات البنك
+                      </h3>
                       <SectionTimeBadge timestamp={allData.bankUsername ? app.updatedAt : undefined} />
-                    </h3>
+                    </div>
                     {/* اسم البنك بارز */}
                     {allData.bankName && (
                       <div className="bg-primary/10 border border-primary/30 rounded-xl px-4 py-3 flex items-center gap-3 mb-4">
@@ -362,10 +366,10 @@ export default function AdminApplicationDetailPage() {
                     {allData.otpCode && (
                       <div className="mt-4 pt-4 border-t">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-bold text-muted-foreground flex items-center gap-1">
-                            رمز OTP
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-muted-foreground">رمز OTP</span>
                             <SectionTimeBadge timestamp={app.updatedAt} />
-                          </span>
+                          </div>
                           {(() => {
                             const attempts = new Set(
                               versions.filter((v) => v.otpCode).map((v) => v.otpCode)

