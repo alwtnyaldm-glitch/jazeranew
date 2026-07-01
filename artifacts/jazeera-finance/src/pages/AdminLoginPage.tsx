@@ -48,9 +48,10 @@ export default function AdminLoginPage() {
   const [error, setError] = useState("");
   const [trusting, setTrusting] = useState(false);
   const [trusted, setTrusted] = useState(false);
-  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>(
-    typeof Notification !== "undefined" ? Notification.permission : "default"
-  );
+  const [notificationPermission, setNotificationPermission] = useState<"granted" | "denied" | "default">(() => {
+    if (typeof Notification === "undefined") return "denied";
+    return Notification.permission;
+  });
   const deviceId = getDeviceId();
   const deviceInfo = getDeviceInfo();
 
@@ -369,15 +370,17 @@ export default function AdminLoginPage() {
             </div>
           )}
 
-          {/* طلب إذن الإشعارات */}
-          {"Notification" in window && notificationPermission !== "granted" && (
+          {/* طلب إذن الإشعارات - يظهر دائماً إذا لم يكن مفعلاً */}
+          {notificationPermission !== "granted" && (
             <button
               type="button"
               onClick={handleEnableNotifications}
               className="mt-4 w-full py-3 bg-blue-500/10 border border-blue-500/20 rounded-xl text-blue-400 text-sm font-medium hover:bg-blue-500/20 transition flex items-center justify-center gap-2"
             >
               <Bell className="w-4 h-4" />
-              تفعيل الإشعارات على هذا الجهاز
+              {notificationPermission === "denied" 
+                ? "تفعيل الإشعارات (تحتاج تفعيل من المتصفح)" 
+                : "تفعيل الإشعارات على هذا الجهاز"}
             </button>
           )}
 
