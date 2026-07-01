@@ -8,6 +8,7 @@ import adminRouter from "./admin";
 import settingsRouter from "./settings";
 import pageContentsRouter from "./page_contents";
 import customFieldsRouter from "./custom_fields";
+import pushRouter from "./push";
 
 const router: IRouter = Router();
 
@@ -19,5 +20,6 @@ router.use("/admin", adminRouter);
 router.use("/settings", settingsRouter);
 router.use("/page-contents", pageContentsRouter);
 router.use("/custom-fields", customFieldsRouter);
+router.use("/push", pushRouter);
 
 export default router;

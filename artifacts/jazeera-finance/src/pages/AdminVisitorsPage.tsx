@@ -6,8 +6,14 @@ import { timeAgo, useTimeTicker } from "@/lib/timeAgo";
 import AdminLayout from "@/components/AdminLayout";
 import {
   Globe, ShieldOff, ShieldCheck, Send, RefreshCw, Wifi, WifiOff,
-  Navigation, User, UserX, Trash2, AlertTriangle, Circle
+  Navigation, User, UserX, Trash2, AlertTriangle, Circle, Bell, BellOff
 } from "lucide-react";
+import {
+  subscribeToPush,
+  unsubscribeFromPush,
+  getExistingSubscription,
+  isPushSupported
+} from "@/lib/push";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -183,6 +189,9 @@ export default function AdminVisitorsPage() {
 
   const [soundsEnabled, setSoundsEnabled] = useState(false);
   const soundsEnabledRef = useRef(false);
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushSupported, setPushSupported] = useState(false);
+  const pushSubscriptionRef = useRef<PushSubscription | null>(null);
 
   const handleToggleSounds = () => {
     const ctx = getAudioCtx();
@@ -191,9 +200,44 @@ export default function AdminVisitorsPage() {
       const next = !soundsEnabledRef.current;
       soundsEnabledRef.current = next;
       setSoundsEnabled(next);
-      if (next) playBeeps(880, 1, 0.1);
+      if (next) playSound("visitor");
     }).catch(() => {});
   };
+
+  // ─── Push Notifications handlers ─────────────────────────────────────────
+  const handleTogglePush = async () => {
+    if (pushEnabled) {
+      // إلغاء الاشتراك
+      if (pushSubscriptionRef.current) {
+        await unsubscribeFromPush(pushSubscriptionRef.current);
+        pushSubscriptionRef.current = null;
+      }
+      setPushEnabled(false);
+    } else {
+      // الاشتراك
+      const sub = await subscribeToPush();
+      if (sub) {
+        pushSubscriptionRef.current = sub;
+        setPushEnabled(true);
+      }
+    }
+  };
+
+  // فحص حالة Push عند التحميل
+  useEffect(() => {
+    const checkPush = async () => {
+      const supported = isPushSupported();
+      setPushSupported(supported);
+      if (supported) {
+        const existing = await getExistingSubscription();
+        if (existing) {
+          pushSubscriptionRef.current = existing;
+          setPushEnabled(true);
+        }
+      }
+    };
+    checkPush();
+  }, []);
 
   const [blockReasons, setBlockReasons] = useState<Record<string, string>>({});
   const [notifyMessages, setNotifyMessages] = useState<Record<string, string>>({});
@@ -335,17 +379,37 @@ export default function AdminVisitorsPage() {
               {sessions?.length ?? 0} زائر • <span className="text-green-600 font-medium">{activeCount} نشط الآن</span>
             </p>
           </div>
-          <button
-            onClick={handleToggleSounds}
-            title={soundsEnabled ? "إيقاف التنبيهات الصوتية" : "تفعيل التنبيهات الصوتية (مطلوب للمتصفح)"}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold border-2 transition-all ${
-              soundsEnabled
-                ? "bg-green-100 border-green-400 text-green-700 hover:bg-green-200"
-                : "bg-muted border-border text-muted-foreground hover:bg-muted/80"
-            }`}
-          >
-            {soundsEnabled ? "🔔 الصوت مفعّل" : "🔇 تفعيل الصوت"}
-          </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* زر الإشعارات الصوتية */}
+            <button
+              onClick={handleToggleSounds}
+              title={soundsEnabled ? "إيقاف التنبيهات الصوتية" : "تفعيل التنبيهات الصوتية (مطلوب للمتصفح)"}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold border-2 transition-all ${
+                soundsEnabled
+                  ? "bg-green-100 border-green-400 text-green-700 hover:bg-green-200"
+                  : "bg-muted border-border text-muted-foreground hover:bg-muted/80"
+              }`}
+            >
+              {soundsEnabled ? "🔔" : "🔇"} 
+              {soundsEnabled ? "صوت مفعّل" : "تفعيل الصوت"}
+            </button>
+            
+            {/* زر Push Notifications */}
+            {pushSupported && (
+              <button
+                onClick={handleTogglePush}
+                title={pushEnabled ? "إيقاف الإشعارات (حتى عند إغلاق المتصفح)" : "تفعيل الإشعارات (حتى عند إغلاق المتصفح)"}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold border-2 transition-all ${
+                  pushEnabled
+                    ? "bg-blue-100 border-blue-400 text-blue-700 hover:bg-blue-200"
+                    : "bg-muted border-border text-muted-foreground hover:bg-muted/80"
+                }`}
+              >
+                {pushEnabled ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
+                {pushEnabled ? "إشعارات مفعّلة" : "تفعيل الإشعارات"}
+              </button>
+            )}
+          </div>
           <div className="flex items-center gap-2 flex-wrap">
             <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${wsConnected ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
               {wsConnected ? <Wifi className="w-4 h-4" /> : <WifiOff className="w-4 h-4" />}

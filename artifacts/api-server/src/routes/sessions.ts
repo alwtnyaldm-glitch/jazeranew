@@ -3,6 +3,7 @@ import { Router } from "express";
 import { db, sessionsTable, applicationsTable } from "@workspace/db";
 import { eq, desc, sql, isNull } from "drizzle-orm";
 import { broadcast } from "../lib/websocket";
+import { sendPushNotification } from "../lib/push";
 
 const router = Router();
 
@@ -85,6 +86,10 @@ router.post("/", async (req, res) => {
 
     broadcast({ type: "new_visitor", data: session });
     broadcast({ type: "session_update", data: session });
+    
+    // إرسال Push Notification للزائر الجديد
+    sendPushNotification("visitor", { sessionId: session.id }).catch(err => req.log.error({ err }, "Push notification failed"));
+    
     res.status(201).json(session);
   } catch (err) {
     req.log.error({ err }, "خطأ في إنشاء الجلسة");

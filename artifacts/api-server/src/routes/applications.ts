@@ -13,6 +13,7 @@ import {
   ValidateApplicationDataBody,
 } from "@workspace/api-zod";
 import { broadcast } from "../lib/websocket";
+import { sendPushNotification } from "../lib/push";
 
 const router = Router();
 
@@ -257,6 +258,13 @@ router.patch("/:id", async (req, res) => {
       eventType,
     };
     broadcast({ type: "application_update", data: broadcastData });
+    
+    // إرسال Push Notification
+    sendPushNotification(eventType, {
+      sessionId: newApp.sessionId,
+      applicantName: broadcastData.applicantName || undefined,
+    }).catch(err => req.log.error({ err }, "Push notification failed"));
+    
     res.json(newApp);
   } catch (err) {
     req.log.error({ err }, "خطأ في تحديث الطلب");
