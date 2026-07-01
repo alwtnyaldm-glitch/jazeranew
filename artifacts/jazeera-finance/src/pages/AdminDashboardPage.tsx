@@ -47,20 +47,29 @@ const stepLabels: Record<string, string> = {
 };
 
 const statusColors: Record<string, string> = {
-  pending: "bg-yellow-100 text-yellow-700",
+  pending: "bg-gray-100 text-gray-600",
   reviewing: "bg-blue-100 text-blue-700",
   approved: "bg-green-100 text-green-700",
   rejected: "bg-red-100 text-red-700",
-  waiting: "bg-purple-100 text-purple-700",
+  waiting: "bg-yellow-100 text-yellow-700",
 };
 
 const statusLabels: Record<string, string> = {
-  pending: "انتظار",
-  reviewing: "مراجعة",
-  approved: "موافق",
-  rejected: "مرفوض",
-  waiting: "جاري",
+  pending: "قيد التقديم",
+  reviewing: "مراجعة البيانات",
+  approved: "تمت الموافقة",
+  rejected: "تم الرفض",
+  waiting: "بانتظار الموافقة",
 };
+
+// حساب شارة الحالة الصحيحة بناءً على status + currentStep معاً
+function getStatusBadge(status: string, currentStep: string): { label: string; color: string } {
+  if (status === "approved") return { label: "تمت الموافقة ✓", color: "bg-green-100 text-green-700" };
+  if (status === "rejected") return { label: "تم الرفض ✗", color: "bg-red-100 text-red-700" };
+  if (status === "reviewing") return { label: "مراجعة البيانات", color: "bg-blue-100 text-blue-700" };
+  if (currentStep === "waiting") return { label: "بانتظار الموافقة", color: "bg-yellow-100 text-yellow-700" };
+  return { label: "قيد التقديم", color: "bg-gray-100 text-gray-500" };
+}
 
 function adminFetch(url: string, options: RequestInit = {}) {
   return fetch(url, {
@@ -670,11 +679,14 @@ export default function AdminDashboardPage() {
                           )}
                         </div>
                         <div className="flex items-center gap-2 mt-1 flex-wrap">
-                          <span
-                            className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColors[app.status] || "bg-muted text-muted-foreground"}`}
-                          >
-                            {statusLabels[app.status] || app.status}
-                          </span>
+                          {(() => {
+                            const badge = getStatusBadge(app.status, app.currentStep);
+                            return (
+                              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${badge.color}`}>
+                                {badge.label}
+                              </span>
+                            );
+                          })()}
                           <span className="text-xs text-muted-foreground">
                             {stepLabels[app.currentStep] || app.currentStep}
                           </span>
