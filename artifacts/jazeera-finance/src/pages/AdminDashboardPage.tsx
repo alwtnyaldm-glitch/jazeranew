@@ -239,12 +239,10 @@ export default function AdminDashboardPage() {
   const expandedRowsRef = useRef<Set<number>>(new Set()); // ref للقراءة الفورية في WebSocket
   const [expandedTabs, setExpandedTabs] = useState<Record<number, "current" | "older">>({});
   const [versionCache, setVersionCache] = useState<Record<number, AppVersion[]>>({});
-  const [renderCount, setRenderCount] = useState(0); // debug
-
-  // debug: عداد لعدد مرات الرسم
-  useEffect(() => {
-    setRenderCount(c => c + 1);
-  });
+  
+  // تحديث فوري لبيانات الطلبات المعروضة (بمفتاح sessionId)
+  // هذا يتتبع أحدث نسخة من كل طلب عن طريق sessionId
+  const [latestAppData, setLatestAppData] = useState<Record<string, AppVersion>>({});
 
   // مزامنة expandedRowsRef مع expandedRows state
   useEffect(() => {
@@ -407,32 +405,53 @@ export default function AdminDashboardPage() {
               );
 
               // تحديث فوري للبيانات المعروضة حتى قبل جلب النسخ
+              // المفتاح يجب أن يكون msg.data.id (الـ ID الجديد) لأن هذا هو الذي سيستخدمه React بعد التحديث
               if (isExpanded || expandedRowsRef.current.has(msg.data.id)) {
-                console.log('[DEBUG] Updating versionCache immediately with:', msg.data.fullName);
-                // إضافة البيانات الجديدة مباشرة للـ versionCache
+                console.log('[DEBUG] Updating versionCache immediately with:', msg.data.fullName, 'at key:', msg.data.id);
                 setVersionCache((prev) => {
                   const next = { ...prev };
-                  if (oldId !== undefined) delete next[oldId];
+                  // استخدام msg.data.id كمفتاح - هذا هو المفتاح الصحيح بعد التحديث
                   const existingVersions = next[msg.data.id] || [];
-                  // إضافة البيانات الجديدة كأول عنصر
                   next[msg.data.id] = [msg.data as unknown as AppVersion, ...existingVersions.filter(v => v.id !== msg.data.id)];
-                  console.log('[DEBUG] versionCache updated, new versions:', next[msg.data.id]?.length);
+                  // حذف المفتاح القديم إن وُجد
+                  if (oldId !== undefined && oldId !== msg.data.id) {
+                    delete next[oldId];
+                  }
+                  console.log('[DEBUG] versionCache updated at key', msg.data.id, 'fullName:', msg.data.fullName);
                   return next;
                 });
+                
+                // تحديث latestAppData بمفتاح sessionId - هذا هو الحل!
+                setLatestAppData((prev) => ({
+                  ...prev,
+                  [msg.data.sessionId]: msg.data as unknown as AppVersion,
+                }));
               } else {
                 console.log('[DEBUG] NOT updating versionCache because: isExpanded=', isExpanded, 'expandedRowsRef.has=', expandedRowsRef.current.has(msg.data.id));
+                // مع ذلك، نحدث latestAppData دائماً حتى لو لم يكن الصف موسعاً
+                setLatestAppData((prev) => ({
+                  ...prev,
+                  [msg.data.sessionId]: msg.data as unknown as AppVersion,
+                }));
               }
 
               // جلب النسخ المحدثة من السيرفر
+              // استخدام closures للحفاظ على القيم الصحيحة
+              const fetchId = msg.data.id;
+              const fetchOldId = oldId;
               adminFetch(`${BASE}/api/applications/${msg.data.id}/versions`)
                 .then((r) => (r.ok ? r.json() : null))
                 .then((versions) => {
                   if (versions) {
-                    console.log('[DEBUG] Fetched versions count:', versions.length);
+                    console.log('[DEBUG] Fetched versions count:', versions.length, 'for id:', fetchId);
                     setVersionCache((prev) => {
                       const next = { ...prev };
-                      if (oldId !== undefined) delete next[oldId];
-                      next[msg.data.id] = versions;
+                      // استخدام fetchId (msg.data.id) كمفتاح
+                      next[fetchId] = versions;
+                      // حذف المفتاح القديم
+                      if (fetchOldId !== undefined && fetchOldId !== fetchId) {
+                        delete next[fetchOldId];
+                      }
                       return next;
                     });
                   }
@@ -920,11 +939,22 @@ export default function AdminDashboardPage() {
                       <div className="bg-muted/30 border-t px-4 pb-4 pt-3">
                         {/* تبويبات النسخ */}
                         {(() => {
+                          // استخدام أحدث البيانات من latestAppData (بمفتاح sessionId)
+                          // هذا يتم تحديثه فوراً من WebSocket
+                          const latestData = latestAppData[app.sessionId] || app;
+                          
+                          // versionCache يستخدم مفتاح app.id
                           const versions = versionCache[app.id] || [];
-                          const totalVersions = versions.length;
-                          const olderVersions = versions.filter((v) => !v.isLatest);
+                          
+                          // إضافة latestData كـ latest إذا لم يكن في versions
+                          const versionsWithLatest = versions[0]?.id === app.id
+                            ? versions
+                            : [latestData as AppVersion, ...versions];
+                          
+                          const totalVersions = versionsWithLatest.length;
+                          const olderVersions = versionsWithLatest.filter((v) => !v.isLatest);
                           const activeTab = expandedTabs[app.id] || "current";
-                          const allData = mergeVersionsData([...versions, app as unknown as AppVersion]);
+                          const allData = mergeVersionsData(versionsWithLatest);
                           // عدد محاولات OTP = عدد القيم المختلفة لرمز OTP عبر النسخ
                           const otpAttempts = new Set(
                             [...versions, app as unknown as AppVersion]
