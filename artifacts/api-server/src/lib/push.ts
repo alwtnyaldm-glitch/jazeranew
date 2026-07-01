@@ -36,18 +36,21 @@ const VAPID_IS_VALID = Boolean(
 );
 
 // إعداد web-push مع VAPID
+console.log("[PushService] Checking VAPID configuration...");
+console.log("[PushService] VAPID_PUBLIC_KEY:", VAPID_PUBLIC_KEY ? `SET (${VAPID_PUBLIC_KEY.length} chars, starts with: ${VAPID_PUBLIC_KEY.substring(0, 10)}...)` : "NOT SET");
+console.log("[PushService] VAPID_PRIVATE_KEY:", VAPID_PRIVATE_KEY ? `SET (${VAPID_PRIVATE_KEY.length} chars)` : "NOT SET");
+
 if (VAPID_IS_VALID) {
+  // Set VAPID details for web-push
   webpush.setVapidDetails(
-    "mailto:notifications@jazeera-finance.com",
+    "mailto:admin@jazeera-finance.com",
     VAPID_PUBLIC_KEY,
     VAPID_PRIVATE_KEY
   );
-  console.log("✅ [WebPush] VAPID keys configured");
-  console.log(`   Public key length: ${VAPID_PUBLIC_KEY.length}`);
+  console.log("[PushService] ✅ VAPID keys are valid, web-push initialized");
 } else {
-  console.log("⚠️ [WebPush] VAPID keys not configured or invalid");
-  console.log("   VAPID_PUBLIC_KEY:", VAPID_PUBLIC_KEY ? `set (${VAPID_PUBLIC_KEY.length} chars)` : "missing");
-  console.log("   VAPID_PRIVATE_KEY:", VAPID_PRIVATE_KEY ? `set (${VAPID_PRIVATE_KEY.length} chars)` : "missing");
+  console.log("[PushService] ⚠️ VAPID keys missing or invalid - push notifications will not work!");
+  console.log("[PushService] Please set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY environment variables");
 }
 
 // ─── رسائل الإشعارات ────────────────────────────────────────────────────
