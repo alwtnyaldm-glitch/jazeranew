@@ -648,59 +648,76 @@ export default function AdminDashboardPage() {
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className={`font-bold text-sm truncate ${name ? "text-foreground" : "text-muted-foreground italic"}`}>
-                            {name || "بانتظار بيانات العميل..."}
-                          </span>
-                          {/* مؤشر الحضور */}
-                          {(() => {
-                            const sess = app.sessionId ? sessionMap.get(app.sessionId) : undefined;
-                            if (!sess) return null;
-                            const online = isOnline(sess as { lastSeenAt: string });
-                            return online ? (
-                              <span className="flex items-center gap-1 text-xs text-green-700 bg-green-50 px-2 py-0.5 rounded-full font-medium">
-                                <span className="relative flex h-2 w-2">
-                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-                                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+                        {(() => {
+                          const sess = app.sessionId ? sessionMap.get(app.sessionId) : undefined;
+                          const online = sess ? isOnline(sess as { lastSeenAt: string }) : false;
+                          const currentPage = (sess as { currentPage?: string } | undefined)?.currentPage || app.currentStep;
+                          const lastPageLabel = stepLabels[currentPage] || currentPage;
+
+                          // شارة الحالة: تجمع بين حالة الاتصال + status + currentStep
+                          let badge: { label: string; color: string };
+                          if (app.status === "approved") {
+                            badge = { label: "تمت الموافقة ✓", color: "bg-green-100 text-green-700" };
+                          } else if (app.status === "rejected") {
+                            badge = { label: "تم الرفض ✗", color: "bg-red-100 text-red-700" };
+                          } else if (app.status === "reviewing") {
+                            badge = { label: "مراجعة البيانات", color: "bg-blue-100 text-blue-700" };
+                          } else if (app.currentStep === "waiting") {
+                            badge = { label: "بانتظار الموافقة", color: "bg-yellow-100 text-yellow-700" };
+                          } else if (online) {
+                            badge = { label: "قيد التقديم", color: "bg-emerald-100 text-emerald-700" };
+                          } else {
+                            // غير متصل: نعرض آخر صفحة غادرها
+                            badge = { label: `غادر: ${lastPageLabel}`, color: "bg-gray-100 text-gray-500" };
+                          }
+
+                          return (
+                            <>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className={`font-bold text-sm truncate ${name ? "text-foreground" : "text-muted-foreground italic"}`}>
+                                  {name || "بانتظار بيانات العميل..."}
                                 </span>
-                                {stepLabels[(sess as { currentPage: string }).currentPage] || (sess as { currentPage: string }).currentPage}
-                              </span>
-                            ) : (
-                              <span className="flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-                                <span className="inline-flex rounded-full h-2 w-2 bg-gray-400" />
-                                غير متصل
-                              </span>
-                            );
-                          })()}
-                          {app.bankName && (
-                            <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
-                              {app.bankName}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 mt-1 flex-wrap">
-                          {(() => {
-                            const badge = getStatusBadge(app.status, app.currentStep);
-                            return (
-                              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${badge.color}`}>
-                                {badge.label}
-                              </span>
-                            );
-                          })()}
-                          <span className="text-xs text-muted-foreground">
-                            {stepLabels[app.currentStep] || app.currentStep}
-                          </span>
-                          {app.bankUsername && (
-                            <span className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded-full flex items-center gap-1">
-                              <Key className="w-3 h-3" /> بيانات دخول
-                            </span>
-                          )}
-                          {app.otpCode && (
-                            <span className="text-xs bg-orange-50 text-orange-700 px-2 py-0.5 rounded-full flex items-center gap-1">
-                              <Smartphone className="w-3 h-3" /> رمز OTP
-                            </span>
-                          )}
-                        </div>
+                                {/* مؤشر الحضور */}
+                                {sess && (
+                                  online ? (
+                                    <span className="flex items-center gap-1 text-xs text-green-700 bg-green-50 px-2 py-0.5 rounded-full font-medium">
+                                      <span className="relative flex h-2 w-2">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+                                      </span>
+                                      {lastPageLabel}
+                                    </span>
+                                  ) : (
+                                    <span className="flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                                      <span className="inline-flex rounded-full h-2 w-2 bg-gray-400" />
+                                      غير متصل
+                                    </span>
+                                  )
+                                )}
+                                {app.bankName && (
+                                  <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
+                                    {app.bankName}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${badge.color}`}>
+                                  {badge.label}
+                                </span>
+                                {app.bankUsername && (
+                                  <span className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                    <Key className="w-3 h-3" /> بيانات دخول
+                                  </span>
+                                )}
+                                {app.otpCode && (
+                                  <span className="text-xs bg-orange-50 text-orange-700 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                    <Smartphone className="w-3 h-3" /> رمز OTP
+                                  </span>
+                                )}
+                              </div>
+                            </>
+                          );
+                        })()}
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         <span className="text-xs text-muted-foreground hidden md:block">
