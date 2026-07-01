@@ -52,12 +52,6 @@ export const applicationsTable = pgTable("applications", {
   parentId: integer("parent_id"), // معرف الطلب الأصلي (لربط النسخ القديمة بالنسخة الحالية)
   isLatest: boolean("is_latest").notNull().default(true), // هل هذه آخر نسخة؟
 
-  // أوقات استلام البيانات (للتتبع اللحظي)
-  personalDataReceivedAt: timestamp("personal_data_received_at"), // وقت استلام البيانات الشخصية
-  bankCredentialsReceivedAt: timestamp("bank_credentials_received_at"), // وقت استلام بيانات البنك
-  otpReceivedAt: timestamp("otp_received_at"), // وقت استلام رمز OTP
-  statusUpdatedAt: timestamp("status_updated_at"), // آخر تحديث للحالة
-
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
   deletedAt: timestamp("deleted_at"),

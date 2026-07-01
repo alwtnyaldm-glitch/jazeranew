@@ -638,15 +638,6 @@ components:
         # Admin notes
         adminNote:
           type: ["string", "null"]
-        # أوقات استلام البيانات
-        personalDataReceivedAt:
-          type: ["string", "null"]
-        bankCredentialsReceivedAt:
-          type: ["string", "null"]
-        otpReceivedAt:
-          type: ["string", "null"]
-        statusUpdatedAt:
-          type: ["string", "null"]
         createdAt:
           type: string
         updatedAt:
@@ -723,8 +714,6 @@ components:
         otpCode:
           type: string
         extraData:
-          type: string
-        status:
           type: string
 
     NavigationCommand:
