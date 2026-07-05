@@ -1,19 +1,10 @@
-// صفحة تسجيل دخول المدير مع الأجهزة الموثوقة
+// صفحة تسجيل دخول المدير
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { Building2, Lock, User, Eye, EyeOff, ShieldCheck, Smartphone, CheckCircle, Bell } from "lucide-react";
+import { Building2, Lock, User, Eye, EyeOff, ShieldCheck, CheckCircle, Bell } from "lucide-react";
+import { subscribeToFCM, isFCMSupported, getExistingFCMToken } from "@/lib/firebase";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-
-// ─── توليد معرف جهاز فريد ────────────────────────────────────────────────
-function getDeviceId(): string {
-  const stored = localStorage.getItem("deviceId");
-  if (stored) return stored;
-  
-  const newId = `device_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
-  localStorage.setItem("deviceId", newId);
-  return newId;
-}
 
 // ─── معلومات الجهاز ──────────────────────────────────────────────────────
 function getDeviceInfo() {
@@ -46,144 +37,30 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState("");
-  const [trusting, setTrusting] = useState(false);
-  const [trusted, setTrusted] = useState(false);
+  const [loggingIn, setLoggingIn] = useState(false);
   const [notificationPermission, setNotificationPermission] = useState<"granted" | "denied" | "default">(() => {
     if (typeof Notification === "undefined") return "denied";
     return Notification.permission;
   });
-  const deviceId = getDeviceId();
+  const [fcmSubscribed, setFcmSubscribed] = useState(false);
   const deviceInfo = getDeviceInfo();
 
-  // التحقق من حالة الجهاز الموثوق
+  // ─── فحص حالة FCM عند التحميل ───────────────────────────────────────
   useEffect(() => {
-    const checkTrusted = async () => {
-      try {
-        const res = await fetch(`${BASE}/api/auth/devices`, {
-          credentials: "include",
-        });
-        if (res.ok) {
-          const devices = await res.json();
-          const isTrusted = devices.some((d: { deviceId: string }) => d.deviceId === deviceId);
-          setTrusted(isTrusted);
-        }
-      } catch {
-        // تجاهل
-      }
-    };
-    checkTrusted();
-    
-    // تحديث حالة إذن الإشعارات
-    if ("Notification" in window) {
+    if (typeof Notification !== "undefined") {
       setNotificationPermission(Notification.permission);
+    }
+    
+    // فحص إذا كان الجهاز مسجل بالفعل
+    const existingToken = getExistingFCMToken();
+    if (existingToken) {
+      setFcmSubscribed(true);
     }
   }, []);
 
-  // ─── الاشتراك في Push Notifications ───────────────────────────────────
-  const subscribeToPush = async (): Promise<boolean> => {
-    if (!("Notification" in window) || Notification.permission !== "granted") {
-      console.log("[Login] Notifications not permitted");
-      return false;
-    }
-
-    try {
-      // التحقق من وجود Service Worker
-      if (!("serviceWorker" in navigator)) {
-        console.log("[Login] Service Worker not supported");
-        return false;
-      }
-
-      console.log("[Login] Starting push subscription for device:", deviceId);
-      
-      const reg = await navigator.serviceWorker.ready;
-      console.log("[Login] Service Worker ready");
-      
-      // الحصول على VAPID public key
-      const vapidRes = await fetch(`${BASE}/api/push/vapid-public-key`);
-      if (!vapidRes.ok) {
-        console.log("[Login] Failed to get VAPID key, using FCM without VAPID");
-        // اشتراك بدون VAPID (للـ FCM Legacy)
-        const sub = await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-        });
-        
-        console.log("[Login] FCM subscription created, saving to server...");
-        
-        const saveRes = await fetch(`${BASE}/api/auth/devices/${deviceId}/push-subscription`, {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
-            subscription: sub.toJSON(),
-            deviceName: deviceInfo.deviceName,
-            browser: deviceInfo.browser,
-            os: deviceInfo.os,
-          }),
-        });
-        
-        const result = await saveRes.json();
-        console.log("[Login] Save result:", result);
-        return saveRes.ok;
-      }
-      
-      const { publicKey } = await vapidRes.json();
-      if (!publicKey) {
-        console.log("[Login] No VAPID public key, using default FCM");
-        const sub = await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-        });
-        
-        const saveRes = await fetch(`${BASE}/api/auth/devices/${deviceId}/push-subscription`, {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
-            subscription: sub.toJSON(),
-            deviceName: deviceInfo.deviceName,
-            browser: deviceInfo.browser,
-            os: deviceInfo.os,
-          }),
-        });
-        
-        return saveRes.ok;
-      }
-
-      console.log("[Login] Subscribing with VAPID...");
-      
-      // الاشتراك في Push مع VAPID
-      const sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(publicKey),
-      });
-
-      console.log("[Login] Push subscription created, saving to server...");
-
-      // حفظ الاشتراك في السيرفر مع معلومات الجهاز
-      const saveRes = await fetch(`${BASE}/api/auth/devices/${deviceId}/push-subscription`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          subscription: sub.toJSON(),
-          deviceName: deviceInfo.deviceName,
-          browser: deviceInfo.browser,
-          os: deviceInfo.os,
-        }),
-      });
-
-      const result = await saveRes.json();
-      console.log("[Login] Save result:", result);
-
-      return saveRes.ok;
-    } catch (err) {
-      console.error("[Login] Push subscription failed:", err);
-      return false;
-    }
-  };
-
   // ─── تفعيل الإشعارات ─────────────────────────────────────────────────
   const handleEnableNotifications = async () => {
-    if (!("Notification" in window)) {
+    if (!isFCMSupported()) {
       setError("المتصفح لا يدعم الإشعارات");
       return;
     }
@@ -192,23 +69,25 @@ export default function AdminLoginPage() {
     setNotificationPermission(permission);
 
     if (permission === "granted") {
-      // الاشتراك في Push
-      await subscribeToPush();
+      const success = await subscribeToFCM();
+      setFcmSubscribed(success);
+      if (!success) {
+        setError("فشل في تفعيل الإشعارات");
+      }
     }
   };
 
-  // تسجيل دخول المدير
+  // ─── تسجيل الدخول ─────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setTrusting(true);
+    setLoggingIn(true);
     
     try {
-      // ─── الخطوة 1: تسجيل الدخول ───────────────────────────────────────────
-      console.log("[Login] Step 1: Logging in...");
+      console.log("[Login] Logging in...");
       const loginRes = await fetch(`${BASE}/api/auth/login`, {
         method: "POST",
-        credentials: "include", // مهم جداً لحفظ الـ cookie
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
       });
@@ -217,54 +96,21 @@ export default function AdminLoginPage() {
         throw new Error("بيانات الدخول غير صحيحة");
       }
       
-      const loginData = await loginRes.json();
-      console.log("[Login] Login successful:", loginData);
+      console.log("[Login] Login successful");
       
-      // ─── الخطوة 2: تسجيل الجهاز كجهاز موثوق ───────────────────────────────
-      console.log("[Login] Step 2: Registering device...");
-      await fetch(`${BASE}/api/auth/devices/trust`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          deviceId,
-          deviceName: deviceInfo.deviceName,
-          deviceType: deviceInfo.deviceType,
-          browser: deviceInfo.browser,
-          os: deviceInfo.os,
-        }),
-      });
-      console.log("[Login] Device registered");
-      
-      // ─── الخطوة 3: الاشتراك في Push ───────────────────────────────────────
-      console.log("[Login] Step 3: Subscribing to push...");
-      if (notificationPermission !== "granted") {
-        await handleEnableNotifications();
-      } else {
-        await subscribeToPush();
+      // تسجيل الجهاز للإشعارات بعد تسجيل الدخول
+      if (notificationPermission === "granted" && !fcmSubscribed) {
+        await subscribeToFCM();
       }
-      console.log("[Login] Push subscription complete");
       
-      setTrusted(true);
       navigate("/admin/dashboard");
     } catch (err) {
       console.error("[Login] Error:", err);
-      setError(err instanceof Error ? err.message : "اسم المستخدم أو كلمة المرور غير صحيحة");
+      setError(err instanceof Error ? err.message : "خطأ في تسجيل الدخول");
     } finally {
-      setTrusting(false);
+      setLoggingIn(false);
     }
   };
-
-  function urlBase64ToUint8Array(base64String: string): Uint8Array {
-    const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-    const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
-    const rawData = window.atob(base64);
-    const outputArray = new Uint8Array(rawData.length);
-    for (let i = 0; i < rawData.length; ++i) {
-      outputArray[i] = rawData.charCodeAt(i);
-    }
-    return outputArray;
-  }
 
   return (
     <div
@@ -348,10 +194,10 @@ export default function AdminLoginPage() {
 
             <button
               type="submit"
-              disabled={trusting}
+              disabled={loggingIn}
               className="w-full navy-gradient text-white py-4 rounded-xl font-bold text-lg hover:opacity-90 transition-opacity disabled:opacity-50 mt-2"
             >
-              {trusting ? "جاري التسجيل..." : "تسجيل الدخول"}
+              {loggingIn ? "جاري التسجيل..." : "تسجيل الدخول"}
             </button>
           </form>
 
@@ -359,18 +205,16 @@ export default function AdminLoginPage() {
             admin / يجب ادخال كلمة المرور بشكل صحيح للدخول
           </p>
 
-          {/* مؤشر الجهاز الموثوق */}
-          {trusted && (
-            <div className="mt-4 bg-green-500/10 border border-green-500/20 rounded-xl p-3 flex items-center gap-3">
-              <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-green-400">جهاز موثوق</p>
-                <p className="text-xs text-green-400/70">{deviceInfo.deviceName}</p>
-              </div>
+          {/* مؤشر الجهاز */}
+          <div className="mt-4 bg-green-500/10 border border-green-500/20 rounded-xl p-3 flex items-center gap-3">
+            <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-green-400">{deviceInfo.deviceName}</p>
+              <p className="text-xs text-green-400/70">تسجيل الدخول من هذا الجهاز</p>
             </div>
-          )}
+          </div>
 
-          {/* طلب إذن الإشعارات - يظهر دائماً إذا لم يكن مفعلاً */}
+          {/* زر تفعيل الإشعارات */}
           {notificationPermission !== "granted" && (
             <button
               type="button"
@@ -385,7 +229,7 @@ export default function AdminLoginPage() {
           )}
 
           {/* حالة الإشعارات */}
-          {"Notification" in window && notificationPermission === "granted" && (
+          {fcmSubscribed && (
             <div className="mt-4 bg-green-500/10 border border-green-500/20 rounded-xl p-3 flex items-center gap-3">
               <Bell className="w-5 h-5 text-green-500 flex-shrink-0" />
               <div>

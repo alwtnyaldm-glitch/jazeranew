@@ -13,7 +13,7 @@ import {
   ValidateApplicationDataBody,
 } from "@workspace/api-zod";
 import { broadcast } from "../lib/websocket";
-import { sendPushNotification } from "../lib/push";
+import { sendFCMNotification } from "../lib/firebase-admin";
 
 const router = Router();
 
@@ -259,11 +259,11 @@ router.patch("/:id", async (req, res) => {
     };
     broadcast({ type: "application_update", data: broadcastData });
     
-    // إرسال Push Notification
-    sendPushNotification(eventType, {
+    // إرسال FCM Push Notification
+    sendFCMNotification(eventType, {
       sessionId: newApp.sessionId,
       applicantName: broadcastData.applicantName || undefined,
-    }).catch(err => req.log.error({ err }, "Push notification failed"));
+    }).catch(err => req.log.error({ err }, "FCM notification failed"));
     
     res.json(newApp);
   } catch (err) {

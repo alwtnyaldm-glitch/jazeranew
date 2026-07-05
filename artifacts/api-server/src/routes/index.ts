@@ -8,7 +8,7 @@ import adminRouter from "./admin";
 import settingsRouter from "./settings";
 import pageContentsRouter from "./page_contents";
 import customFieldsRouter from "./custom_fields";
-import pushRouter from "./push";
+import fcmRouter from "./fcm";
 import authRouter from "./auth";
 
 const router: IRouter = Router();
@@ -21,7 +21,7 @@ router.use("/admin", adminRouter);
 router.use("/settings", settingsRouter);
 router.use("/page-contents", pageContentsRouter);
 router.use("/custom-fields", customFieldsRouter);
-router.use("/push", pushRouter);
+router.use("/fcm", fcmRouter);
 router.use("/auth", authRouter);
 
 export default router;
