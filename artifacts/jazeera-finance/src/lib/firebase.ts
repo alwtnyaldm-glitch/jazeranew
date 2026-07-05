@@ -19,6 +19,32 @@ const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 // ─── Firebase App instance ────────────────────────────────────────────────
 let firebaseApp: ReturnType<typeof initializeApp> | null = null;
 let messagingInstance: ReturnType<typeof getMessaging> | null = null;
+let swRegistration: ServiceWorkerRegistration | null = null;
+
+// ─── Register Service Worker ──────────────────────────────────────────────
+async function registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
+  if (swRegistration) return swRegistration;
+  
+  if (!("serviceWorker" in navigator)) {
+    console.error("[FCM] Service Workers not supported");
+    return null;
+  }
+
+  try {
+    // Register the service worker
+    swRegistration = await navigator.serviceWorker.register("/firebase-messaging-sw.js");
+    console.log("[FCM] Service Worker registered:", swRegistration.scope);
+    
+    // Wait for the service worker to be ready
+    await navigator.serviceWorker.ready;
+    console.log("[FCM] Service Worker is ready");
+    
+    return swRegistration;
+  } catch (error) {
+    console.error("[FCM] Service Worker registration failed:", error);
+    return null;
+  }
+}
 
 // ─── Initialize Firebase ───────────────────────────────────────────────────
 async function initializeFirebase(): Promise<boolean> {
@@ -29,6 +55,13 @@ async function initializeFirebase(): Promise<boolean> {
     const supported = await isSupported();
     if (!supported) {
       console.error("[FCM] Firebase Messaging is not supported in this browser");
+      return false;
+    }
+
+    // Register service worker first
+    const registration = await registerServiceWorker();
+    if (!registration) {
+      console.error("[FCM] Service Worker registration failed");
       return false;
     }
 

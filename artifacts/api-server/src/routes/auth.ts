@@ -89,15 +89,42 @@ router.post("/fcm-token", async (req, res) => {
                req.socket.remoteAddress ||
                null;
 
-    await db
-      .update(trustedDevicesTable)
-      .set({
-        pushSubscription: fcmToken, // FCM token
-        lastUsedAt: new Date(),
-      })
-      .where(eq(trustedDevicesTable.deviceId, req.session.adminUsername || "admin"));
+    const deviceId = req.session.adminUsername || "admin";
 
-    console.log(`📱 [FCM] Token saved for admin`);
+    // Check if device exists
+    const existingDevice = await db
+      .select()
+      .from(trustedDevicesTable)
+      .where(eq(trustedDevicesTable.deviceId, deviceId))
+      .limit(1);
+
+    if (existingDevice.length > 0) {
+      // Update existing device
+      await db
+        .update(trustedDevicesTable)
+        .set({
+          pushSubscription: fcmToken,
+          deviceName: deviceInfo?.deviceName || existingDevice[0].deviceName,
+          browser: deviceInfo?.browser || existingDevice[0].browser,
+          os: deviceInfo?.os || existingDevice[0].os,
+          ipAddress: ip,
+          lastUsedAt: new Date(),
+        })
+        .where(eq(trustedDevicesTable.deviceId, deviceId));
+    } else {
+      // Create new device
+      await db.insert(trustedDevicesTable).values({
+        deviceId: deviceId,
+        pushSubscription: fcmToken,
+        deviceName: deviceInfo?.deviceName || "Unknown Device",
+        browser: deviceInfo?.browser || "Unknown",
+        os: deviceInfo?.os || "Unknown",
+        ipAddress: ip,
+        isActive: true,
+      });
+    }
+
+    console.log(`📱 [FCM] Token saved for admin: ${deviceId}`);
     res.json({ success: true });
   } catch (err) {
     req.log.error({ err }, "خطأ في حفظ FCM Token");
