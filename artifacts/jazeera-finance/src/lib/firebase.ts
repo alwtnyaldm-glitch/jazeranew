@@ -151,7 +151,36 @@ async function registerServiceWorker(): Promise<ServiceWorkerRegistration | null
     
     // Wait for the service worker to be ready
     await navigator.serviceWorker.ready;
-    console.log("[FCM] Service Worker is ready");
+    console.log("[FCM] Service Worker is ready (but not necessarily active yet)");
+    
+    // IMPORTANT: Wait for the service worker to actually be ACTIVE
+    // This is the key fix - without this, getToken fails with "no active Service Worker"
+    if (swRegistration.active) {
+      console.log("[FCM] Service Worker is already active");
+    } else {
+      console.log("[FCM] Waiting for Service Worker to become active...");
+      await new Promise<void>((resolve) => {
+        if (swRegistration!.active) {
+          resolve();
+          return;
+        }
+        swRegistration!.addEventListener("updatefound", () => {
+          const newWorker = swRegistration!.installing;
+          if (newWorker) {
+            newWorker.addEventListener("statechange", () => {
+              if (newWorker.state === "activated") {
+                console.log("[FCM] Service Worker activated via updatefound");
+                resolve();
+              }
+            });
+          }
+        });
+        // Fallback timeout
+        setTimeout(resolve, 3000);
+      });
+    }
+    
+    console.log("[FCM] Service Worker is fully active");
     
     return swRegistration;
   } catch (error) {

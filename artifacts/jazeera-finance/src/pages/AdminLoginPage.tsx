@@ -31,6 +31,24 @@ function getDeviceInfo() {
   };
 }
 
+// ─── فحص إذا الجهاز مسجل مسبقاً ──────────────────────────────────────
+async function checkDeviceRegistration(): Promise<boolean> {
+  try {
+    const response = await fetch(`${BASE}/api/auth/check-device`, {
+      method: "GET",
+      credentials: "include",
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      return data.hasPushSubscription === true;
+    }
+  } catch (err) {
+    console.error("[Login] Error checking device registration:", err);
+  }
+  return false;
+}
+
 export default function AdminLoginPage() {
   const [, navigate] = useLocation();
   const [username, setUsername] = useState("");
@@ -42,15 +60,39 @@ export default function AdminLoginPage() {
   const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
   const [fcmSubscribed, setFcmSubscribed] = useState(false);
   const [enablingNotifications, setEnablingNotifications] = useState(false);
+  const [checkingDevice, setCheckingDevice] = useState(true);
   const deviceInfo = getDeviceInfo();
 
   // ─── فحص حالة FCM عند التحميل ───────────────────────────────────────
   useEffect(() => {
-    // فحص إذا كان الجهاز مسجل بالفعل
-    const existingToken = getExistingFCMToken();
-    if (existingToken) {
-      setFcmSubscribed(true);
-    }
+    // فحص إذا كان الجهاز مسجل بالفعل (محلياً أو على الخادم)
+    const checkDevice = async () => {
+      setCheckingDevice(true);
+      
+      // أولاً: فحص localStorage
+      const existingToken = getExistingFCMToken();
+      if (existingToken) {
+        console.log("[Login] Device found in localStorage");
+        setFcmSubscribed(true);
+        setCheckingDevice(false);
+        return;
+      }
+      
+      // ثانياً: فحص من الخادم (إذا كان مسجل الدخول)
+      const isRegistered = await checkDeviceRegistration();
+      if (isRegistered) {
+        console.log("[Login] Device found on server (already registered)");
+        setFcmSubscribed(true);
+        setCheckingDevice(false);
+        return;
+      }
+      
+      console.log("[Login] Device not registered");
+      setFcmSubscribed(false);
+      setCheckingDevice(false);
+    };
+    
+    checkDevice();
   }, []);
 
   // ─── تفعيل الإشعارات ─────────────────────────────────────────────────
@@ -114,8 +156,10 @@ export default function AdminLoginPage() {
       
       // فحص إذا كان FCM مدعوم ومفتوح
       if (isFCMSupported() && !fcmSubscribed) {
+        console.log("[Login] Showing notification prompt (device not registered)");
         setShowNotificationPrompt(true);
       } else {
+        console.log("[Login] Skipping notification prompt (device already registered or not supported)");
         navigate("/admin/dashboard");
       }
     } catch (err) {

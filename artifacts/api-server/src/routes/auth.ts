@@ -58,6 +58,42 @@ router.get("/check", async (req, res) => {
   }
 });
 
+// ─── فحص إذا الجهاز مسجل مسبقاً ─────────────────────────────────────────
+router.get("/check-device", async (req, res) => {
+  if (!req.session.isAuthenticated) {
+    return res.status(401).json({ error: "غير مصرح" });
+  }
+
+  try {
+    const deviceId = req.session.adminUsername || "admin";
+    
+    // البحث عن الجهاز في قاعدة البيانات
+    const [device] = await db
+      .select()
+      .from(trustedDevicesTable)
+      .where(eq(trustedDevicesTable.deviceId, deviceId))
+      .limit(1);
+
+    if (device && device.pushSubscription) {
+      // الجهاز مسجل وله اشتراك
+      res.json({ 
+        hasPushSubscription: true,
+        deviceId: device.deviceId,
+        deviceName: device.deviceName,
+      });
+    } else {
+      // الجهاز غير مسجل
+      res.json({ 
+        hasPushSubscription: false,
+        deviceId: deviceId,
+      });
+    }
+  } catch (err) {
+    req.log.error({ err }, "خطأ في فحص الجهاز");
+    res.json({ hasPushSubscription: false, error: "خطأ في الفحص" });
+  }
+});
+
 // ─── تسجيل الخروج ─────────────────────────────────────────────────────────
 router.post("/logout", (req, res) => {
   req.session.destroy((err) => {
