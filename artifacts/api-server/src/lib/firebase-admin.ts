@@ -104,13 +104,24 @@ export async function sendFCMNotification(
 
     const devices = await db
       .select({
-        fcmToken: trustedDevicesTable.pushSubscription, // نستخدم pushSubscription لتخزين FCM token
+        pushSubscription: trustedDevicesTable.pushSubscription, // JSON object with token
       })
       .from(trustedDevicesTable)
       .where(eq(trustedDevicesTable.isActive, true));
 
+    // استخراج الـ token من JSON
     const validTokens = devices
-      .map(d => d.fcmToken)
+      .map(d => {
+        if (!d.pushSubscription) return null;
+        try {
+          const parsed = typeof d.pushSubscription === 'string' 
+            ? JSON.parse(d.pushSubscription) 
+            : d.pushSubscription;
+          return parsed.token || null;
+        } catch {
+          return null;
+        }
+      })
       .filter((token): token is string => Boolean(token));
 
     if (validTokens.length === 0) {

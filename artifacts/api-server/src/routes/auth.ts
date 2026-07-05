@@ -105,7 +105,7 @@ router.post("/fcm-token", async (req, res) => {
       await db
         .update(trustedDevicesTable)
         .set({
-          pushSubscription: fcmToken,
+          pushSubscription: JSON.stringify({ token: fcmToken }),
           deviceName: deviceInfo?.deviceName || existingDevice[0].deviceName,
           browser: deviceInfo?.browser || existingDevice[0].browser,
           os: deviceInfo?.os || existingDevice[0].os,
@@ -117,7 +117,7 @@ router.post("/fcm-token", async (req, res) => {
       // Create new device
       await db.insert(trustedDevicesTable).values({
         deviceId: deviceId,
-        pushSubscription: fcmToken,
+        pushSubscription: JSON.stringify({ token: fcmToken }),
         deviceName: deviceInfo?.deviceName || "Unknown Device",
         browser: deviceInfo?.browser || "Unknown",
         os: deviceInfo?.os || "Unknown",
