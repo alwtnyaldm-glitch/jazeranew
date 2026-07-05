@@ -1,7 +1,8 @@
 // Firebase Cloud Messaging Service للواجهة الأمامية
 // يتعامل مع Firebase SDK لتسجيل FCM Token
 
-import { initializeApp, getMessaging, getToken, onMessage, isSupported } from "firebase/messaging";
+import { initializeApp } from "firebase/app";
+import { getMessaging, getToken, onMessage, isSupported } from "firebase/messaging";
 
 // Firebase configuration
 const FIREBASE_CONFIG = {
