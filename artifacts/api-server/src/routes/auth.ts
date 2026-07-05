@@ -91,6 +91,8 @@ router.post("/fcm-token", async (req, res) => {
 
     const deviceId = req.session.adminUsername || "admin";
 
+    console.log(`📱 [FCM] Saving token for device: ${deviceId}`);
+
     // Check if device exists
     const existingDevice = await db
       .select()
@@ -124,11 +126,12 @@ router.post("/fcm-token", async (req, res) => {
       });
     }
 
-    console.log(`📱 [FCM] Token saved for admin: ${deviceId}`);
+    console.log(`📱 [FCM] Token saved successfully for: ${deviceId}`);
     res.json({ success: true });
   } catch (err) {
+    console.error(`📱 [FCM] Error saving token:`, err);
     req.log.error({ err }, "خطأ في حفظ FCM Token");
-    res.status(500).json({ error: "فشل في حفظ FCM Token" });
+    res.status(500).json({ error: "فشل في حفظ FCM Token", details: String(err) });
   }
 });
 
