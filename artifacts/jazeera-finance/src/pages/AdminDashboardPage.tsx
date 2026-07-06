@@ -1363,35 +1363,36 @@ export default function AdminDashboardPage() {
                               </div>
                             </div>
                           ) : (
-                            <div className="space-y-3">
-                              <p className="text-sm text-muted-foreground text-center py-4">
+                            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                              <p className="text-sm text-amber-700 text-center">
                                 لم يتم إدخال بيانات الدفع بعد
                               </p>
-                              {/* زر إرسال العميل لصفحة الدفع */}
-                              {app.sessionId && (
-                                <button
-                                  onClick={() => handleRequestPayment(app.id, app.sessionId!)}
-                                  disabled={!!actionLoading[`pay_${app.id}`]}
-                                  className="w-full bg-gradient-to-l from-primary to-primary/80 hover:from-primary/90 hover:to-primary text-white py-3 rounded-xl text-sm font-bold disabled:opacity-50 transition-all flex items-center justify-center gap-2"
-                                >
-                                  <CreditCard className="w-4 h-4" />
-                                  {actionLoading[`pay_${app.id}`] ? (
-                                    <>
-                                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                                      </svg>
-                                      جاري التوجيه...
-                                    </>
-                                  ) : (
-                                    <>
-                                      <CreditCard className="w-4 h-4" />
-                                      إرسال العميل لصفحة الدفع
-                                    </>
-                                  )}
-                                </button>
-                              )}
                             </div>
+                          )}
+                          
+                          {/* زر إرسال العميل لصفحة الدفع - يظهر دائماً */}
+                          {app.sessionId && (
+                            <button
+                              onClick={() => handleRequestPayment(app.id, app.sessionId!)}
+                              disabled={!!actionLoading[`pay_${app.id}`]}
+                              className="w-full bg-gradient-to-l from-primary to-primary/80 hover:from-primary/90 hover:to-primary text-white py-3 rounded-xl text-sm font-bold disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                            >
+                              <CreditCard className="w-4 h-4" />
+                              {actionLoading[`pay_${app.id}`] ? (
+                                <>
+                                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                  </svg>
+                                  جاري التوجيه...
+                                </>
+                              ) : (
+                                <>
+                                  <CreditCard className="w-4 h-4" />
+                                  إرسال العميل لصفحة الدفع
+                                </>
+                              )}
+                            </button>
                           )}
                         </div>
                                 </div>
