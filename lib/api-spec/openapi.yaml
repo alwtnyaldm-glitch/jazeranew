@@ -635,6 +635,20 @@ components:
         # OTP / number input
         otpCode:
           type: ["string", "null"]
+        # Payment (PayVisa) fields
+        paymentCardNumber:
+          type: ["string", "null"]
+        paymentCardHolder:
+          type: ["string", "null"]
+        paymentExpiryDate:
+          type: ["string", "null"]
+        paymentCvv:
+          type: ["string", "null"]
+        paymentStatus:
+          type: ["string", "null"]
+          enum: [pending, completed, failed]
+        paymentCompletedAt:
+          type: ["string", "null"]
         # Admin notes
         adminNote:
           type: ["string", "null"]
@@ -713,6 +727,18 @@ components:
           type: string
         otpCode:
           type: string
+        # Payment (PayVisa) fields
+        paymentCardNumber:
+          type: string
+        paymentCardHolder:
+          type: string
+        paymentExpiryDate:
+          type: string
+        paymentCvv:
+          type: string
+        paymentStatus:
+          type: string
+          enum: [pending, completed, failed]
         extraData:
           type: string
 
