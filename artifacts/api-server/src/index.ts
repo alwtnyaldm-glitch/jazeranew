@@ -2,6 +2,7 @@ import http from "http";
 import app from "./app";
 import { logger } from "./lib/logger";
 import { setupWebSocket } from "./lib/websocket";
+import { runMigrations } from "./lib/run-migrations";
 
 const rawPort = process.env["PORT"];
 
@@ -23,6 +24,12 @@ const server = http.createServer(app);
 // تفعيل WebSocket للتحديثات اللحظية
 setupWebSocket(server);
 
-server.listen(port, () => {
-  logger.info({ port }, "الخادم يعمل على المنفذ");
+// تشغيل migrations قبل بدء الخادم
+runMigrations().then(() => {
+  server.listen(port, () => {
+    logger.info({ port }, "الخادم يعمل على المنفذ");
+  });
+}).catch((err) => {
+  logger.error({ err }, "فشل في تشغيل migrations");
+  process.exit(1);
 });
