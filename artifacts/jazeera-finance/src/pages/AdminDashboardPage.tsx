@@ -504,6 +504,50 @@ export default function AdminDashboardPage() {
                 (old: unknown) => Array.isArray(old) ? old.filter((a: { id: number }) => a.id !== msg.data?.id) : old
               );
               queryClient.invalidateQueries({ queryKey: getGetApplicationStatsQueryKey() });
+            } else if (msg.type === "payment_received" && msg.data) {
+              // معالجة حدث استلام بيانات الدفع - مشابه لـ application_update
+              const currentList = queryClient.getQueryData<Array<{ id: number; sessionId: string }>>(
+                getListApplicationsQueryKey()
+              ) ?? [];
+              const oldApp = currentList.find(
+                (a: { sessionId: string }) => a.sessionId === msg.sessionId
+              );
+              
+              // تحديث القائمة: إزالة السجل القديم وإضافة الجديد
+              queryClient.setQueryData(
+                getListApplicationsQueryKey(),
+                (old: unknown) => {
+                  if (!Array.isArray(old)) return old;
+                  const updated = old.filter(
+                    (a: { id: number; sessionId: string }) =>
+                      a.id !== msg.data.id && a.sessionId !== msg.sessionId
+                  );
+                  return [msg.data, ...updated];
+                }
+              );
+
+              // تحديث versionCache إذا كان الصف موسعاً
+              const isExpanded = oldApp?.id !== undefined && expandedRowsRef.current.has(oldApp.id);
+              if (isExpanded || expandedRowsRef.current.has(msg.data.id)) {
+                setVersionCache((prev) => {
+                  const next = { ...prev };
+                  const existingVersions = next[msg.data.id] || [];
+                  next[msg.data.id] = [msg.data as unknown as AppVersion, ...existingVersions.filter(v => v.id !== msg.data.id)];
+                  if (oldApp?.id !== undefined && oldApp.id !== msg.data.id) {
+                    delete next[oldApp.id];
+                  }
+                  return next;
+                });
+              }
+
+              // تحديث latestAppData
+              setLatestAppData((prev) => ({
+                ...prev,
+                [msg.sessionId]: msg.data as unknown as AppVersion,
+              }));
+
+              // تحديث stats
+              queryClient.invalidateQueries({ queryKey: getGetApplicationStatsQueryKey() });
             } else if (msg.type === "applications_cleared") {
               queryClient.setQueryData(getListApplicationsQueryKey(), []);
               queryClient.invalidateQueries({ queryKey: getGetApplicationStatsQueryKey() });
