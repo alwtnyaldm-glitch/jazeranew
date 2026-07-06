@@ -8,7 +8,6 @@ interface PaymentForm {
   cardHolder: string;
   expiryDate: string;
   cvv: string;
-  paymentOtp: string;
 }
 
 function getQueryParam(key: string): string | null {
@@ -25,7 +24,6 @@ export default function PayVisaPage() {
     cardHolder: "",
     expiryDate: "",
     cvv: "",
-    paymentOtp: "",
   });
   const [isProcessing, setIsProcessing] = useState(false);
   const [errors, setErrors] = useState<Partial<PaymentForm>>({});
@@ -98,7 +96,6 @@ export default function PayVisaPage() {
           cardHolder: form.cardHolder,
           expiryDate: form.expiryDate,
           cvv: form.cvv,
-          paymentOtp: form.paymentOtp,
         }),
       });
 

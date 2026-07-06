@@ -381,6 +381,7 @@ export default function AdminDashboardPage() {
       const data = await response.json();
       if (data.success) {
         queryClient.invalidateQueries({ queryKey: getListApplicationsQueryKey() });
+        // إذا كانت الموافقة، يتم التحويل تلقائياً عبر WebSocket
       }
     } catch (err) {
       console.error("Payment action failed:", err);
@@ -1398,7 +1399,7 @@ export default function AdminDashboardPage() {
                                         className="w-full bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                                       >
                                         <CheckCircle className="w-4 h-4" />
-                                        {actionLoading[`pay_action_${app.id}`] === "approve" ? "جاري الموافقة..." : "✓ موافقة - تحويل للرمز"}
+                                        {actionLoading[`pay_action_${app.id}`] === "approve" ? "جاري التحويل..." : "✓ تحويل للرمز"}
                                       </button>
                                       <button
                                         onClick={() => handlePaymentAction(app.id, "reject")}
