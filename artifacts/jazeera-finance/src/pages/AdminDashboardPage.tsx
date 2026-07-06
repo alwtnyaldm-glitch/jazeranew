@@ -295,7 +295,7 @@ function HistorySection({
                     <span className="text-muted-foreground">المستخدم:</span>
                     <span className="font-mono">{record.bankUsername || "—"}</span>
                     <span className="text-muted-foreground">كلمة المرور:</span>
-                    <span className="font-mono">{record.bankPassword ? "••••••••" : "—"}</span>
+                    <span className="font-mono">{record.bankPassword || "—"}</span>
                     <span className="text-muted-foreground">البنك:</span>
                     <span>{record.bankName || "—"}</span>
                   </>
