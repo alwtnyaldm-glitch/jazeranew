@@ -452,6 +452,15 @@ router.post("/:id/request-payment", async (req, res) => {
       .set({ currentPage: "pay-visa", lastSeenAt: new Date() })
       .where(eq(sessionsTable.id, app.sessionId));
 
+    // حفظ التوجيه في الجلسة لاستخدامه عند إعادة التحميل (مع applicationId)
+    await db
+      .update(sessionsTable)
+      .set({ 
+        pendingNavigation: JSON.stringify({ page: "pay-visa", applicationId: id }),
+        lastSeenAt: new Date() 
+      })
+      .where(eq(sessionsTable.id, app.sessionId));
+
     // إرسال حدث WebSocket لتوجيه العميل
     broadcast({
       type: "navigate_user",

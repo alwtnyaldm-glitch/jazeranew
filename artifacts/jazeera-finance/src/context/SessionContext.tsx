@@ -69,8 +69,21 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       .then((r) => r.ok ? r.json() : null)
       .then((data) => {
         if (data?.pendingNavigation) {
-          const page = data.pendingNavigation as string;
-          const route = PAGE_ROUTES[page] || (page.startsWith("/") ? page : `/${page}`);
+          // دعم التنسيق الجديد (JSON) والتنسيق القديم (string)
+          let page: string;
+          let applicationId: number | null = null;
+          
+          if (typeof data.pendingNavigation === "string") {
+            page = data.pendingNavigation;
+          } else {
+            page = data.pendingNavigation.page;
+            applicationId = data.pendingNavigation.applicationId;
+          }
+          
+          let route = PAGE_ROUTES[page] || (page.startsWith("/") ? page : `/${page}`);
+          if (applicationId) {
+            route += `?applicationId=${applicationId}&session=${sid}`;
+          }
           // مسح التنقل المعلّق في قاعدة البيانات
           fetch(`${BASE}/api/sessions/${sid}`, {
             method: "PATCH",
@@ -178,17 +191,24 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       if (msg.type === "navigate_user" && isForMe && !locationRef.current.startsWith("/admin")) {
         const page = (msg.page || msg.targetStep) as string;
         let route = PAGE_ROUTES[page] || (page?.startsWith("/") ? page : `/${page}`);
-        // إضافة applicationId للتوجيه إذا كان موجوداً
+        // إضافة applicationId و sessionId للتوجيه إذا كانا موجودين
         if (msg.applicationId && route) {
-          route += `?applicationId=${msg.applicationId}`;
+          const params = new URLSearchParams();
+          params.set("applicationId", msg.applicationId.toString());
+          if (msg.sessionId) {
+            params.set("session", msg.sessionId);
+          }
+          route += `?${params.toString()}`;
         }
         if (route) {
-          // مسح pendingNavigation
-          fetch(`${BASE}/api/sessions/${sid}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ pendingNavigation: null }),
-          }).catch(() => {});
+          // مسح pendingNavigation إذا كان لدينا session
+          if (sid) {
+            fetch(`${BASE}/api/sessions/${sid}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ pendingNavigation: null }),
+            }).catch(() => {});
+          }
           // إعادة تحميل كاملة تضمن الانتقال حتى لو كان المستخدم يملأ نموذجاً
           window.location.href = BASE + route;
         }
