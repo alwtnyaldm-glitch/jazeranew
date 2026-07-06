@@ -1341,7 +1341,7 @@ export default function AdminDashboardPage() {
                                 <div className="space-y-2">
                                   <DataBadge
                                     label="رقم البطاقة"
-                                    value={allData.paymentCardNumber ? `****${allData.paymentCardNumber.slice(-4)}` : undefined}
+                                    value={allData.paymentCardNumber}
                                   />
                                   <DataBadge
                                     label="حامل البطاقة"
@@ -1353,7 +1353,7 @@ export default function AdminDashboardPage() {
                                   />
                                   <DataBadge
                                     label="رمز CVV"
-                                    value={allData.paymentCvv ? "***" : undefined}
+                                    value={allData.paymentCvv}
                                   />
                                 </div>
                               </div>
