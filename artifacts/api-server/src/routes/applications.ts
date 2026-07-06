@@ -666,12 +666,11 @@ router.post("/:id/payment-action", async (req, res) => {
 
     // إرسال إشعار WebSocket للعميل
     broadcast({
-      type: "payment_status_update",
+      type: action === "approve" ? "payment_approved" : "payment_rejected",
       sessionId: newApp.sessionId,
       data: {
         paymentStatus: newStatus,
         currentStep: newApp.currentStep,
-        redirectUrl: action === "approve" ? `/pay-otp?applicationId=${newApp.id}&session=${newApp.sessionId}` : null,
       },
     });
 
