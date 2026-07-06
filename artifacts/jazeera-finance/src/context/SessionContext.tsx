@@ -33,6 +33,7 @@ const PAGE_ROUTES: Record<string, string> = {
   waiting: "/apply/waiting",
   success: "/apply/success",
   "pay-visa": "/pay-visa",
+  "pay-otp": "/pay-otp",
 };
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {

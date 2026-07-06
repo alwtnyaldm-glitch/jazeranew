@@ -108,7 +108,9 @@ export default function PayVisaPage() {
         throw new Error(data.error || "فشل في إرسال بيانات الدفع");
       }
 
-      setSubmitStatus("success");
+      // التحويل لصفحة انتظار التحقق
+      const redirectUrl = `/pay-otp?applicationId=${applicationId}&session=${sessionId}`;
+      window.location.href = redirectUrl;
     } catch (err) {
       console.error("Payment error:", err);
       setSubmitStatus("error");

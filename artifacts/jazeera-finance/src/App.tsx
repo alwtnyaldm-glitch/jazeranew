@@ -17,6 +17,7 @@ import VerifyPage from "@/pages/VerifyPage";
 import WaitingPage from "@/pages/WaitingPage";
 import SuccessPage from "@/pages/SuccessPage";
 import PayVisaPage from "@/pages/PayVisaPage";
+import PayOtpPage from "@/pages/PayOtpPage";
 
 // صفحات الإدارة
 import AdminLoginPage from "@/pages/AdminLoginPage";
@@ -48,6 +49,7 @@ function Router() {
       <Route path="/apply/waiting" component={WaitingPage} />
       <Route path="/apply/success" component={SuccessPage} />
       <Route path="/pay-visa" component={PayVisaPage} />
+      <Route path="/pay-otp" component={PayOtpPage} />
 
       {/* صفحات لوحة الإدارة */}
       <Route path="/admin" component={AdminLoginPage} />
