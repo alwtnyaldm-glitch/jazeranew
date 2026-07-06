@@ -10,6 +10,18 @@ interface WebSocketContextType {
   send: (msg: WsMessage) => void;
 }
 
+// دالة broadcast لإرسال رسائل من خارج السياق
+export function broadcast(msg: WsMessage) {
+  if (typeof window !== "undefined") {
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const ws = new WebSocket(`${protocol}//${window.location.host}/api/ws`);
+    ws.onopen = () => {
+      ws.send(JSON.stringify(msg));
+      ws.close();
+    };
+  }
+}
+
 const WebSocketContext = createContext<WebSocketContextType | undefined>(undefined);
 
 export function WebSocketProvider({ children }: { children: React.ReactNode }) {

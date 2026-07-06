@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { ShieldCheck, ArrowRight, Loader2, AlertCircle, CheckCircle, XCircle } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { useWebSocket } from "@/context/WebSocketContext";
+import { useWebSocket, broadcast } from "@/context/WebSocketContext";
 
 function getQueryParam(key: string): string | null {
   const params = new URLSearchParams(window.location.search);
@@ -20,6 +20,7 @@ export default function PayOtpPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const { subscribe } = useWebSocket();
+  const [pendingAppData, setPendingAppData] = useState<any>(null);
 
   // الاستماع لتحديثات حالة الدفع من لوحة الإدارة
   useEffect(() => {
@@ -84,6 +85,26 @@ export default function PayOtpPage() {
       if (data.success) {
         setStatus("approved");
         setMessage(data.message || "تمت الموافقة على الدفع!");
+        
+        // جلب بيانات الطلب المحدثة وإرسال إشعار لوحة الإدارة
+        try {
+          const appResponse = await fetch(`/api/applications/${applicationId}`);
+          if (appResponse.ok) {
+            const appData = await appResponse.json();
+            // إرسال إشعار WebSocket لتحديث لوحة الإدارة
+            broadcast({
+              type: "application_update",
+              data: {
+                ...appData,
+                applicantName: appData.fullName || appData.companyName || appData.contactName || null,
+                eventType: "payment"
+              }
+            });
+          }
+        } catch (notifyErr) {
+          console.error("فشل في إرسال إشعار التحديث:", notifyErr);
+        }
+        
         setTimeout(() => {
           window.location.href = "/apply/success";
         }, 2000);
