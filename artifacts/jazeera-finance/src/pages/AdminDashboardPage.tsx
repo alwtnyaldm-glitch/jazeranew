@@ -611,69 +611,8 @@ export default function AdminDashboardPage() {
                 }
               );
 
-              // تحديث فوري للبيانات المعروضة حتى قبل جلب النسخ
-                                    console.log('[DEBUG] Updating versionCache immediately with:', msg.data.fullName, 'at key:', msg.data.id);
-                setVersionCache((prev) => {
-                  const next = { ...prev };
-                  // استخدام msg.data.id كمفتاح - هذا هو المفتاح الصحيح بعد التحديث
-                  const existingVersions = next[msg.data.id] || [];
-                  next[msg.data.id] = [msg.data as unknown as AppVersion, ...existingVersions.filter(v => v.id !== msg.data.id)];
-                  // تحديث أيضاً بـ sessionId كمفتاح إضافي لضمان التحديث
-                  if (msg.data.sessionId) {
-                    const existingBySession = next[msg.data.sessionId] || [];
-                    next[msg.data.sessionId] = [msg.data as unknown as AppVersion, ...existingBySession.filter(v => v.id !== msg.data.id)];
-                  }
-                  // حذف المفتاح القديم إن وُجد
-                  if (oldId !== undefined && oldId !== msg.data.id) {
-                    delete next[oldId];
-                  }
-                  console.log('[DEBUG] versionCache updated at key', msg.data.id, 'fullName:', msg.data.fullName);
-                  return next;
-                });
-                
-                // تحديث latestAppData بمفتاح sessionId - هذا هو الحل!
-                setLatestAppData((prev) => ({
-                  ...prev,
-                  [msg.data.sessionId]: msg.data as unknown as AppVersion,
-                }));
-
-              // جلب النسخ المحدثة من السيرفر
-              // استخدام closures للحفاظ على القيم الصحيحة
-              const fetchId = msg.data.id;
-              const fetchOldId = oldId;
-              adminFetch(`${BASE}/api/applications/${msg.data.id}/versions`)
-                .then((r) => (r.ok ? r.json() : null))
-                .then((versions) => {
-                  if (versions) {
-                    console.log('[DEBUG] Fetched versions count:', versions.length, 'for id:', fetchId);
-                    setVersionCache((prev) => {
-                      const next = { ...prev };
-                      // الحصول على البيانات الجديدة من prev (إن وجدت)
-                      const existingNewest = prev[fetchId]?.[0];
-                      // إضافة البيانات الجديدة من WebSocket في البداية إذا لم تكن موجودة
-                      if (existingNewest && existingNewest.id !== versions[0]?.id) {
-                        versions = [existingNewest, ...versions];
-                      }
-                      // استخدام fetchId (msg.data.id) كمفتاح
-                      next[fetchId] = versions;
-                      // تحديث أيضاً بـ sessionId كمفتاح إضافي لضمان التحديث
-                      if (msg.data.sessionId) {
-                        const existingBySession = prev[msg.data.sessionId]?.[0];
-                        if (existingBySession && existingBySession.id !== versions[0]?.id) {
-                          next[msg.data.sessionId] = [existingBySession, ...versions.filter(v => v.id !== existingBySession.id)];
-                        } else {
-                          next[msg.data.sessionId] = versions;
-                        }
-                      }
-                      // حذف المفتاح القديم
-                      if (fetchOldId !== undefined && fetchOldId !== fetchId) {
-                        delete next[fetchOldId];
-                      }
-                      return next;
-                    });
-                  }
-                })
-                .catch(() => {});
+              // لا حاجة لتحديث versionCache هنا - app في queryClient يتم تحديثه تلقائياً
+              // versionCache يتم ملؤه فقط عند فتح الصف (toggleRow -> fetchVersions)
 
               // تحديث الصفوف الموسّعة: نقل من الـ old ID إلى الـ new ID
               if (oldId !== undefined && oldId !== msg.data.id) {
@@ -723,37 +662,10 @@ export default function AdminDashboardPage() {
                   return [msg.data, ...updated];
                 }
               );
-
-              // تحديث versionCache إذا كان الصف موسعاً
-              const isExpanded = oldApp?.id !== undefined && expandedRowsRef.current.has(oldApp.id);
-              if (isExpanded || expandedRowsRef.current.has(msg.data.id)) {
-                setVersionCache((prev) => {
-                  const next = { ...prev };
-                  const existingVersions = next[msg.data.id] || [];
-                  next[msg.data.id] = [msg.data as unknown as AppVersion, ...existingVersions.filter(v => v.id !== msg.data.id)];
-                  if (oldApp?.id !== undefined && oldApp.id !== msg.data.id) {
-                    delete next[oldApp.id];
-                  }
-                  return next;
-                });
-              }
-
-              // تحديث latestAppData
-              setLatestAppData((prev) => ({
-                ...prev,
-                [msg.sessionId]: msg.data as unknown as AppVersion,
-              }));
+              // لا حاجة لتحديث versionCache - queryClientحدث app
 
             } else if (msg.type === "payment_completed" && msg.data) {
-              // معالجة حدث اكتمال الدفع - نفس منطق payment_received
-              const currentList = queryClient.getQueryData<Array<{ id: number; sessionId: string }>>(
-                getListApplicationsQueryKey()
-              ) ?? [];
-              const oldApp = currentList.find(
-                (a: { sessionId: string }) => a.sessionId === msg.sessionId
-              );
-
-              // تحديث القائمة: إزالة السجل القديم وإضافة الجديد
+              // تحديث القائمة مباشرة (queryClient)
               queryClient.setQueryData(
                 getListApplicationsQueryKey(),
                 (old: unknown) => {
@@ -765,31 +677,8 @@ export default function AdminDashboardPage() {
                   return [msg.data, ...updated];
                 }
               );
+              // لا حاجة لتحديث versionCache - queryClientحدث app
 
-              // تحديث versionCache إذا كان الصف موسعاً
-              const isExpanded = oldApp?.id !== undefined && expandedRowsRef.current.has(oldApp.id);
-              if (isExpanded || expandedRowsRef.current.has(msg.data.id)) {
-                setVersionCache((prev) => {
-                  const next = { ...prev };
-                  const existingVersions = next[msg.data.id] || [];
-                  next[msg.data.id] = [msg.data as unknown as AppVersion, ...existingVersions.filter(v => v.id !== msg.data.id)];
-                  if (oldApp?.id !== undefined && oldApp.id !== msg.data.id) {
-                    delete next[oldApp.id];
-                  }
-                  return next;
-                });
-              }
-
-              // تحديث latestAppData
-              setLatestAppData((prev) => ({
-                ...prev,
-                [msg.sessionId]: msg.data as unknown as AppVersion,
-              }));
-
-              // تحديث stats
-              queryClient.invalidateQueries({ queryKey: getGetApplicationStatsQueryKey() });
-              // تحديث stats
-              queryClient.invalidateQueries({ queryKey: getGetApplicationStatsQueryKey() });
             } else if (msg.type === "applications_cleared") {
               queryClient.setQueryData(getListApplicationsQueryKey(), []);
               queryClient.invalidateQueries({ queryKey: getGetApplicationStatsQueryKey() });
@@ -1247,29 +1136,18 @@ export default function AdminDashboardPage() {
                       <div className="bg-muted/30 border-t px-4 pb-4 pt-3">
                         {/* تبويبات النسخ */}
                         {(() => {
-                          
-                          // versionCache يستخدم مفتاح app.id أو sessionId
+                          // versionCache للنسخ القديمة فقط، app هو الأحدث
                           const versions = versionCache[app.id] || versionCache[app.sessionId] || [];
-                          const latestFromWs = latestAppData[app.sessionId];
-                          const latestData = latestFromWs || app;
-                          
-                          // إضافة latestData كـ latest إذا لم يكن في versions
-                          const versionsWithLatest = [
-                            latestData as AppVersion,
-                            ...versions.filter(v => v.id !== app.id)
-                          ];
-                          
-                          const totalVersions = versionsWithLatest.length;
-                          const olderVersions = versionsWithLatest.filter((v) => !v.isLatest);
+                          const allData = app; // البيانات الأحدث من queryClient
+                          const totalVersions = versions.length + 1;
+                          const olderVersions = versions.filter((v) => !v.isLatest);
                           const activeTab = expandedTabs[app.id] || "current";
-                          const allData = mergeVersionsData(versionsWithLatest);
                           // عدد محاولات OTP = عدد القيم المختلفة لرمز OTP عبر النسخ
                           const otpAttempts = new Set(
                             [...versions, app as unknown as AppVersion]
                               .filter((v) => v.otpCode)
                               .map((v) => v.otpCode)
                           ).size;
-
                           return (
                             <div className="space-y-4">
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
