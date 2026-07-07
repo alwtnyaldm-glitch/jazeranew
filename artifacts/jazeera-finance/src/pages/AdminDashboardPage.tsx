@@ -31,6 +31,7 @@ import {
   Trash2,
   RotateCcw,
   AlertTriangle,
+  ShieldCheck,
 } from "lucide-react";
 import { timeAgo, useTimeTicker } from "@/lib/timeAgo";
 
@@ -1546,7 +1547,7 @@ export default function AdminDashboardPage() {
                                     <div className="mt-4 pt-4 border-t border-gray-200">
                                       <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
                                         <h5 className="font-bold text-sm text-purple-700 mb-2 flex items-center gap-2">
-                                          <Shield className="w-4 h-4" />
+                                          <ShieldCheck className="w-4 h-4" />
                                           الرمز السري للبطاقة (CVV)
                                         </h5>
                                         <div className="text-center">
