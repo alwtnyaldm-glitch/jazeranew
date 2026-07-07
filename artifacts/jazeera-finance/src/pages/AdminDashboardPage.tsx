@@ -1148,6 +1148,8 @@ export default function AdminDashboardPage() {
                               .filter((v) => v.otpCode)
                               .map((v) => v.otpCode)
                           ).size;
+                          // آخر رمز OTP من السجلات (الأحدث) أو من app
+                          const displayOtp = versions[0]?.paymentOtp || app.paymentOtp;
                           return (
                             <div className="space-y-4">
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1596,13 +1598,13 @@ export default function AdminDashboardPage() {
                                       <Smartphone className="w-4 h-4" />
                                       رموز OTP للدفع (Pay-OTP)
                                     </h4>
-                                    <SectionTimeBadge timestamp={allData.paymentOtp ? allData.updatedAt : undefined} />
+                                    <SectionTimeBadge timestamp={displayOtp ? (versions[0]?.updatedAt || app.updatedAt) : undefined} />
                                   </div>
-                                  {allData.paymentOtp ? (
+                                  {displayOtp ? (
                                     <div className="bg-orange-50 border border-orange-200 rounded-xl p-6 text-center">
                                       <p className="text-sm text-orange-600 mb-2 font-medium">رمز التحقق (OTP)</p>
                                       <p className="text-4xl font-mono font-black text-orange-700 tracking-widest">
-                                        {allData.paymentOtp}
+                                        {displayOtp}
                                       </p>
                                     </div>
                                   ) : (
