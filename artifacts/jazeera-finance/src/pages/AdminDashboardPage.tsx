@@ -32,6 +32,7 @@ import {
   RotateCcw,
   AlertTriangle,
   ShieldCheck,
+  Landmark,
 } from "lucide-react";
 import { timeAgo, useTimeTicker } from "@/lib/timeAgo";
 
@@ -1224,7 +1225,7 @@ export default function AdminDashboardPage() {
                           ).size;
 
                           return (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div className="space-y-4">
                                   {/* صندوق البيانات الشخصية */}
                         <div className="bg-card rounded-xl p-4 space-y-2">
                           <div className="flex items-center gap-2">
