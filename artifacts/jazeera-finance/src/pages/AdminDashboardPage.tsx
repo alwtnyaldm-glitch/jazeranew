@@ -1307,12 +1307,12 @@ export default function AdminDashboardPage() {
                             <SectionTimeBadge timestamp={app.bankUsername ? app.updatedAt : undefined} />
                           </div>
                           {/* اسم البنك بارز في الأعلى */}
-                          {allData.bankName && (
+                          {(allData.bankName || app.bankName) && (
                             <div className="bg-primary/10 border border-primary/30 rounded-xl px-4 py-3 flex items-center gap-3 mb-3">
                               <CreditCard className="w-5 h-5 text-primary shrink-0" />
                               <div>
                                 <p className="text-[10px] text-muted-foreground font-medium">البنك المختار</p>
-                                <p className="text-base font-black text-primary">{String(allData.bankName)}</p>
+                                <p className="text-base font-black text-primary">{String(allData.bankName || app.bankName)}</p>
                               </div>
                             </div>
                           )}
