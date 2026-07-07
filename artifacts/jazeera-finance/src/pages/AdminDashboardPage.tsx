@@ -1242,12 +1242,11 @@ export default function AdminDashboardPage() {
                       <div className="bg-muted/30 border-t px-4 pb-4 pt-3">
                         {/* تبويبات النسخ */}
                         {(() => {
-                          // استخدام أحدث البيانات من latestAppData (بمفتاح sessionId)
-                          // هذا يتم تحديثه فوراً من WebSocket
-                          const latestData = latestAppData[app.sessionId] || app;
                           
                           // versionCache يستخدم مفتاح app.id أو sessionId
                           const versions = versionCache[app.id] || versionCache[app.sessionId] || [];
+                          const latestFromWs = latestAppData[app.sessionId];
+                          const latestData = latestFromWs || versions[0] || app;
                           
                           // إضافة latestData كـ latest إذا لم يكن في versions
                           const versionsWithLatest = versions[0]?.id === app.id
