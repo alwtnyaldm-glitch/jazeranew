@@ -248,7 +248,7 @@ function HistorySection({
   expanded: boolean;
   onToggle: () => void;
 }) {
-  if (!records || records.length <= 1) return null;
+  if (!records || records.length === 0) return null;
   
   const titleMap = {
     applicant: "سجلات البيانات الشخصية",
@@ -266,17 +266,23 @@ function HistorySection({
       >
         <span className="flex items-center gap-2">
           <History className="w-4 h-4" />
-          {titleMap[type]} ({records.length - 1} نسخة قديمة)
+          {titleMap[type]} ({records.length} نسخة)
         </span>
         <ChevronDown className={`w-4 h-4 transition-transform ${expanded ? "rotate-180" : ""}`} />
       </button>
       
       {expanded && (
-        <div className="mt-2 space-y-2 max-h-48 overflow-y-auto">
-          {records.sort((a, b) => (b.version || 0) - (a.version || 0)).slice(1).map((record, idx) => (
-            <div key={record.id} className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-xs">
+        <div className="mt-2 space-y-2 max-h-64 overflow-y-auto">
+          {records.sort((a, b) => (b.version || 0) - (a.version || 0)).map((record, idx) => (
+            <div key={record.id} className={`p-3 rounded-lg border text-xs ${
+              idx === 0 
+                ? "bg-green-50 border-green-300" 
+                : "bg-gray-50 border-gray-200"
+            }`}>
               <div className="flex items-center justify-between mb-2">
-                <span className="font-bold">النسخة {record.version}</span>
+                <span className={`font-bold ${idx === 0 ? "text-green-700" : ""}`}>
+                  {idx === 0 ? "🔹 الأحدث" : `النسخة ${record.version}`}
+                </span>
                 <span className="text-muted-foreground">{timeAgo(record.createdAt)}</span>
               </div>
               <div className="grid grid-cols-2 gap-1">
