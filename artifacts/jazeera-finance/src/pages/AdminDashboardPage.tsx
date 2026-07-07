@@ -34,7 +34,7 @@ import {
   ShieldCheck,
   Landmark,
 } from "lucide-react";
-import { timeAgo, useTimeTicker } from "@/lib/timeAgo";
+import { timeAgo, TimeCounter, useTimeTicker } from "@/lib/timeAgo";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -274,7 +274,9 @@ function HistorySection({
       
       {expanded && (
         <div className="mt-2 space-y-2 max-h-64 overflow-y-auto">
-          {records.sort((a, b) => (b.version || 0) - (a.version || 0)).map((record, idx) => (
+          {(() => {
+            const sortedRecords = [...records].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            return sortedRecords.map((record, idx) => (
             <div key={record.id} className={`p-3 rounded-lg border text-xs ${
               idx === 0 
                 ? "bg-green-50 border-green-300" 
@@ -282,9 +284,9 @@ function HistorySection({
             }`}>
               <div className="flex items-center justify-between mb-2">
                 <span className={`font-bold ${idx === 0 ? "text-green-700" : ""}`}>
-                  {idx === 0 ? "🔹 الأحدث" : `النسخة ${record.version}`}
+                  {idx === 0 ? "🔹 الأحدث" : `منذ ${timeAgo(record.createdAt)}`
                 </span>
-                <span className="text-muted-foreground">{timeAgo(record.createdAt)}</span>
+                <span className="text-muted-foreground"><TimeCounter dateStr={record.createdAt} /></span>
               </div>
               <div className="grid grid-cols-2 gap-1">
                 {type === "applicant" && (
@@ -337,7 +339,8 @@ function HistorySection({
                 )}
               </div>
             </div>
-          ))}
+          ));
+          })()}
         </div>
       )}
     </div>
