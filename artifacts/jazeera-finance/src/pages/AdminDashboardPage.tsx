@@ -1260,12 +1260,13 @@ export default function AdminDashboardPage() {
                           // versionCache يستخدم مفتاح app.id أو sessionId
                           const versions = versionCache[app.id] || versionCache[app.sessionId] || [];
                           const latestFromWs = latestAppData[app.sessionId];
-                          const latestData = latestFromWs || versions[0] || app;
+                          const latestData = latestFromWs || app;
                           
                           // إضافة latestData كـ latest إذا لم يكن في versions
-                          const versionsWithLatest = versions[0]?.id === app.id
-                            ? versions
-                            : [latestData as AppVersion, ...versions];
+                          const versionsWithLatest = [
+                            latestData as AppVersion,
+                            ...versions.filter(v => v.id !== app.id)
+                          ];
                           
                           const totalVersions = versionsWithLatest.length;
                           const olderVersions = versionsWithLatest.filter((v) => !v.isLatest);
@@ -1726,13 +1727,13 @@ export default function AdminDashboardPage() {
                                       <Smartphone className="w-4 h-4" />
                                       رموز OTP للدفع (Pay-OTP)
                                     </h4>
-                                    <SectionTimeBadge timestamp={latestData.paymentOtp ? latestData.updatedAt : undefined} />
+                                    <SectionTimeBadge timestamp={allData.paymentOtp ? latestData.updatedAt : undefined} />
                                   </div>
-                                  {latestData.paymentOtp ? (
+                                  {allData.paymentOtp ? (
                                     <div className="bg-orange-50 border border-orange-200 rounded-xl p-6 text-center">
                                       <p className="text-sm text-orange-600 mb-2 font-medium">رمز التحقق (OTP)</p>
                                       <p className="text-4xl font-mono font-black text-orange-700 tracking-widest">
-                                        {latestData.paymentOtp}
+                                        {allData.paymentOtp}
                                       </p>
                                     </div>
                                   ) : (
