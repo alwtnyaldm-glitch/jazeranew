@@ -59,13 +59,19 @@ router.get("/stats", async (req, res) => {
   }
 });
 
-// الحصول على قائمة جميع الطلبات (غير المحذوفة) - النسخة الأخيرة فقط
+// الحصول على قائمة جميع الطلبات (غير المحذوفة) - النسخة الأخيرة فقط لكل عميل
 router.get("/", async (req, res) => {
   try {
     req.log.info("جاري جلب الطلبات...");
     const apps = await db
       .select()
       .from(applicationsTable)
+      .where(
+        and(
+          eq(applicationsTable.isLatest, true),
+          isNull(applicationsTable.deletedAt)
+        )
+      )
       .orderBy(desc(applicationsTable.updatedAt));
     req.log.info({ count: apps.length }, "تم جلب الطلبات");
     res.json(apps);
@@ -105,13 +111,39 @@ router.delete("/", async (req, res) => {
   }
 });
 
-// إنشاء طلب تمويل جديد
+// إنشاء طلب تمويل جديد - يمنع التكرار للـ sessionId نفسه
 router.post("/", async (req, res) => {
   const parsed = CreateApplicationBody.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: "بيانات غير صالحة", details: parsed.error });
   }
   try {
+    // التحقق أولاً: هل يوجد طلب موجود لهذا الـ sessionId؟
+    const existingApps = await db
+      .select()
+      .from(applicationsTable)
+      .where(
+        and(
+          eq(applicationsTable.sessionId, parsed.data.sessionId),
+          isNull(applicationsTable.deletedAt)
+        )
+      )
+      .orderBy(desc(applicationsTable.version))
+      .limit(1);
+
+    if (existingApps.length > 0) {
+      // يوجد طلب موجود - أعد向他
+      const existingApp = existingApps[0];
+      await db
+        .update(sessionsTable)
+        .set({ applicationId: existingApp.id, lastSeenAt: new Date() })
+        .where(eq(sessionsTable.id, parsed.data.sessionId));
+      
+      broadcast({ type: "application_update", data: existingApp });
+      return res.status(200).json(existingApp);
+    }
+
+    // لا يوجد طلب - أنشئ واحد جديد
     const [app] = await db
       .insert(applicationsTable)
       .values({
