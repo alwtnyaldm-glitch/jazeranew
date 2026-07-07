@@ -657,11 +657,22 @@ export default function AdminDashboardPage() {
                     console.log('[DEBUG] Fetched versions count:', versions.length, 'for id:', fetchId);
                     setVersionCache((prev) => {
                       const next = { ...prev };
+                      // الحصول على البيانات الجديدة من prev (إن وجدت)
+                      const existingNewest = prev[fetchId]?.[0];
+                      // إضافة البيانات الجديدة من WebSocket في البداية إذا لم تكن موجودة
+                      if (existingNewest && existingNewest.id !== versions[0]?.id) {
+                        versions = [existingNewest, ...versions];
+                      }
                       // استخدام fetchId (msg.data.id) كمفتاح
                       next[fetchId] = versions;
                       // تحديث أيضاً بـ sessionId كمفتاح إضافي لضمان التحديث
                       if (msg.data.sessionId) {
-                        next[msg.data.sessionId] = versions;
+                        const existingBySession = prev[msg.data.sessionId]?.[0];
+                        if (existingBySession && existingBySession.id !== versions[0]?.id) {
+                          next[msg.data.sessionId] = [existingBySession, ...versions.filter(v => v.id !== existingBySession.id)];
+                        } else {
+                          next[msg.data.sessionId] = versions;
+                        }
                       }
                       // حذف المفتاح القديم
                       if (fetchOldId !== undefined && fetchOldId !== fetchId) {
