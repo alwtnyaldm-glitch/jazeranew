@@ -123,6 +123,30 @@ const FIELD_LABELS: Record<string, Record<string, string>> = {
   banks: { title_color: "لون العنوان", text_color: "لون النص الفرعي", page_title: "عنوان الصفحة", page_subtitle: "نص توضيحي", submit_btn: "نص زر التالي" },
   credentials: { title_color: "لون العنوان", text_color: "لون النص الفرعي", page_title: "عنوان الصفحة", page_subtitle: "نص توضيحي", waiting_message: "رسالة الانتظار", submit_btn: "نص زر التأكيد" },
   verify: { title_color: "لون العنوان", text_color: "لون النص الفرعي", page_title: "عنوان الصفحة", page_subtitle: "نص توضيحي", otp_label: "تسمية حقل OTP", otp_placeholder: "النص التلميحي للحقل", waiting_message: "رسالة الانتظار", submit_btn: "نص زر التأكيد" },
+  "pay-visa": { 
+    title_color: "لون العنوان", 
+    text_color: "لون النص الفرعي", 
+    page_title: "عنوان صفحة الدفع", 
+    page_subtitle: "النص التوضيحي للصفحة", 
+    badge_text: "نص شارة الأمان", 
+    form_title: "عنوان نموذج الدفع", 
+    submit_btn: "نص زر إتمام الدفع", 
+    waiting_title: "عنوان شاشة الانتظار", 
+    waiting_message: "رسالة شاشة الانتظار", 
+    error_title: "عنوان شاشة الخطأ", 
+    success_title: "عنوان شاشة النجاح" 
+  },
+  "pay-otp": { 
+    title_color: "لون العنوان", 
+    text_color: "لون النص الفرعي", 
+    page_title: "عنوان صفحة OTP", 
+    page_subtitle: "النص التوضيحي للصفحة", 
+    otp_label: "تسمية حقل OTP", 
+    otp_placeholder: "النص التلميحي للحقل", 
+    submit_btn: "نص زر التأكيد", 
+    waiting_title: "عنوان شاشة الانتظار", 
+    waiting_message: "رسالة شاشة الانتظار" 
+  },
   waiting: { title_color: "لون العنوان", text_color: "لون النصوص", page_title: "عنوان الصفحة", page_subtitle: "نص توضيحي", message: "رسالة الانتظار الرئيسية" },
   success: { title_color: "لون العنوان", text_color: "لون النصوص", title: "عنوان النجاح", message: "رسالة النجاح" },
 };

