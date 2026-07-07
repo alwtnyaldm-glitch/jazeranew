@@ -258,6 +258,10 @@ export default function CredentialsPage() {
     if (bank) {
       patchBody.bankId = Number(selectedBank); // إرسال كـ number وليس string
       patchBody.bankName = bank.nameAr;
+      // إرسال bankLogo إذا كان متوفراً
+      if ((bank as any).logoUrl) {
+        patchBody.bankLogo = (bank as any).logoUrl;
+      }
     }
 
     try {
