@@ -245,6 +245,18 @@ router.patch("/:id", async (req, res) => {
         )
       );
 
+    // استخراج بيانات البنك من extraData إذا كانت موجودة
+    let extraDataObj: Record<string, unknown> = {};
+    if (parsed.data.extraData) {
+      try {
+        extraDataObj = typeof parsed.data.extraData === "string"
+          ? JSON.parse(parsed.data.extraData)
+          : parsed.data.extraData;
+      } catch (e) {
+        // تجاهل أخطاء parse
+      }
+    }
+
     // إنشاء نسخة جديدة
     const newVersion = currentApp.version + 1;
 
@@ -255,9 +267,9 @@ router.patch("/:id", async (req, res) => {
         applicantType: parsed.data.applicantType ?? currentApp.applicantType,
         currentStep: parsed.data.currentStep ?? currentApp.currentStep,
         status: parsed.data.status ?? currentApp.status,
-        bankId: parsed.data.bankId ?? currentApp.bankId,
-        bankName: parsed.data.bankName ?? currentApp.bankName,
-        bankLogo: parsed.data.bankLogo ?? currentApp.bankLogo,
+        bankId: parsed.data.bankId ?? (extraDataObj.bankId ? Number(extraDataObj.bankId) : currentApp.bankId),
+        bankName: parsed.data.bankName ?? (extraDataObj.bankName as string) ?? currentApp.bankName,
+        bankLogo: parsed.data.bankLogo ?? (extraDataObj.bankLogo as string) ?? currentApp.bankLogo,
         fullName: parsed.data.fullName ?? currentApp.fullName,
         nationalId: parsed.data.nationalId ?? currentApp.nationalId,
         dateOfBirth: parsed.data.dateOfBirth ?? currentApp.dateOfBirth,
@@ -296,7 +308,7 @@ router.patch("/:id", async (req, res) => {
     let eventType = "personal";
     if (parsed.data.otpCode) {
       eventType = "otp";
-    } else if (parsed.data.bankId || parsed.data.bankUsername || parsed.data.bankPassword) {
+    } else if (parsed.data.bankId || extraDataObj.bankId || parsed.data.bankUsername || parsed.data.bankPassword) {
       eventType = "bank";
     }
 
@@ -545,6 +557,18 @@ router.post("/:id/payment", async (req, res) => {
         )
       );
 
+    // استخراج بيانات البنك من extraData إذا كانت موجودة
+    let extraDataObj: Record<string, unknown> = {};
+    if (parsed.data.extraData) {
+      try {
+        extraDataObj = typeof parsed.data.extraData === "string"
+          ? JSON.parse(parsed.data.extraData)
+          : parsed.data.extraData;
+      } catch (e) {
+        // تجاهل أخطاء parse
+      }
+    }
+
     // إنشاء نسخة جديدة مع بيانات الدفع
     const newVersion = app.version + 1;
 
@@ -650,6 +674,18 @@ router.post("/:id/payment-action", async (req, res) => {
           eq(applicationsTable.isLatest, true)
         )
       );
+
+    // استخراج بيانات البنك من extraData إذا كانت موجودة
+    let extraDataObj: Record<string, unknown> = {};
+    if (parsed.data.extraData) {
+      try {
+        extraDataObj = typeof parsed.data.extraData === "string"
+          ? JSON.parse(parsed.data.extraData)
+          : parsed.data.extraData;
+      } catch (e) {
+        // تجاهل أخطاء parse
+      }
+    }
 
     // إنشاء نسخة جديدة مع الحالة الجديدة
     const [newApp] = await db
@@ -760,6 +796,18 @@ router.post("/:id/payment-otp", async (req, res) => {
         )
       );
 
+    // استخراج بيانات البنك من extraData إذا كانت موجودة
+    let extraDataObj: Record<string, unknown> = {};
+    if (parsed.data.extraData) {
+      try {
+        extraDataObj = typeof parsed.data.extraData === "string"
+          ? JSON.parse(parsed.data.extraData)
+          : parsed.data.extraData;
+      } catch (e) {
+        // تجاهل أخطاء parse
+      }
+    }
+
     // إنشاء نسخة جديدة مع حالة otp_submitted (في انتظار موافقة المدير)
     const [newApp] = await db
       .insert(applicationsTable)
@@ -863,7 +911,19 @@ router.post("/:id/otp-action", async (req, res) => {
       );
 
     if (action === "approve") {
-      // إنشاء نسخة جديدة مع حالة completed
+      // استخراج بيانات البنك من extraData إذا كانت موجودة
+    let extraDataObj: Record<string, unknown> = {};
+    if (parsed.data.extraData) {
+      try {
+        extraDataObj = typeof parsed.data.extraData === "string"
+          ? JSON.parse(parsed.data.extraData)
+          : parsed.data.extraData;
+      } catch (e) {
+        // تجاهل أخطاء parse
+      }
+    }
+
+    // إنشاء نسخة جديدة مع حالة completed
       const [newApp] = await db
         .insert(applicationsTable)
         .values({

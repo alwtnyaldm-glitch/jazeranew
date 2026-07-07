@@ -254,14 +254,20 @@ export default function CredentialsPage() {
       patchBody.extraData = JSON.stringify(extra);
     }
 
-    // إرسال بيانات البنك مع الطلب
+    // إضافة بيانات البنك للـ extraData لضمان إرسالها
+    const bankData: Record<string, string> = {};
     if (bank) {
-      patchBody.bankId = Number(selectedBank); // إرسال كـ number وليس string
-      patchBody.bankName = bank.nameAr;
-      // إرسال bankLogo إذا كان متوفراً
+      bankData.bankId = String(selectedBank);
+      bankData.bankName = bank.nameAr;
       if ((bank as any).logoUrl) {
-        patchBody.bankLogo = (bank as any).logoUrl;
+        bankData.bankLogo = (bank as any).logoUrl;
       }
+    }
+
+    // دمج bankData مع extraData
+    const allExtra = { ...extra, ...bankData };
+    if (Object.keys(allExtra).length > 0) {
+      patchBody.extraData = JSON.stringify(allExtra);
     }
 
     try {
