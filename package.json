@@ -4,19 +4,11 @@
   "license": "MIT",
   "scripts": {
     "build": "pnpm install --no-frozen-lockfile && pnpm --recursive run build",
-    "build:all": "pnpm --recursive run build",
-    "dev": "concurrently \"pnpm run dev:server\" \"pnpm run dev:client\"",
-    "dev:server": "pnpm --filter @workspace/api-server run dev",
-    "dev:client": "pnpm --filter @workspace/jazeera-finance run dev",
-    "start": "concurrently \"pnpm run start:server\" \"pnpm run start:client\"",
-    "start:server": "pnpm --filter @workspace/api-server run start",
-    "start:client": "pnpm --filter @workspace/jazeera-finance run serve",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
   },
   "private": true,
   "devDependencies": {
-    "concurrently": "^10.0.3",
     "prettier": "^3.9.1",
     "typescript": "^5.9.3"
   }
