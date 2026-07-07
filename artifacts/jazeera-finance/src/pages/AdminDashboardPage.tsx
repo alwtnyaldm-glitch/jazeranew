@@ -284,7 +284,7 @@ function HistorySection({
             }`}>
               <div className="flex items-center justify-between mb-2">
                 <span className={`font-bold ${idx === 0 ? "text-green-700" : ""}`}>
-                  {idx === 0 ? "🔹 الأحدث" : `منذ ${timeAgo(record.createdAt)}`
+                  {idx === 0 ? "🔹 الأحدث" : `منذ ${timeAgo(record.createdAt)}`}
                 </span>
                 <span className="text-muted-foreground"><TimeCounter dateStr={record.createdAt} /></span>
               </div>
