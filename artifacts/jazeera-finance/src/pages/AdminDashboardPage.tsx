@@ -1226,7 +1226,8 @@ export default function AdminDashboardPage() {
 
                           return (
                             <div className="space-y-4">
-                                  {/* صندوق البيانات الشخصية */}
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                {/* صندوق البيانات الشخصية */}
                         <div className="bg-card rounded-xl p-4 space-y-2">
                           <div className="flex items-center gap-2">
                             <h4 className="font-bold text-sm text-primary mb-3 flex items-center gap-2">
@@ -1494,8 +1495,11 @@ export default function AdminDashboardPage() {
                             onToggle={() => setExpandedHistory(h => ({ ...h, otp: !h.otp }))}
                           />
                         </div>
-
-                        {/* صندوق بيانات الدفع */}
+                              </div>
+                              
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                
+                                {/* صندوق بيانات البطاقة */}
                         <div className="bg-card rounded-xl p-4 space-y-2">
                           <div className="flex items-center gap-2">
                             <h4 className="font-bold text-sm text-primary mb-3 flex items-center gap-2">
@@ -1688,6 +1692,7 @@ export default function AdminDashboardPage() {
                           )}
                         </div>
                               </div>
+                            </div>
                             );
                           })()}
                       </div>
