@@ -612,8 +612,6 @@ export default function AdminDashboardPage() {
               );
 
               // تحديث فوري للبيانات المعروضة حتى قبل جلب النسخ
-              // المفتاح يجب أن يكون msg.data.id (الـ ID الجديد) لأن هذا هو الذي سيستخدمه React بعد التحديث
-              if (isExpanded || expandedRowsRef.current.has(msg.data.id)) {
                                     console.log('[DEBUG] Updating versionCache immediately with:', msg.data.fullName, 'at key:', msg.data.id);
                 setVersionCache((prev) => {
                   const next = { ...prev };
@@ -638,14 +636,6 @@ export default function AdminDashboardPage() {
                   ...prev,
                   [msg.data.sessionId]: msg.data as unknown as AppVersion,
                 }));
-              } else {
-                console.log('[DEBUG] NOT updating versionCache because: isExpanded=', isExpanded, 'expandedRowsRef.has=', expandedRowsRef.current.has(msg.data.id));
-                // مع ذلك، نحدث latestAppData دائماً حتى لو لم يكن الصف موسعاً
-                setLatestAppData((prev) => ({
-                  ...prev,
-                  [msg.data.sessionId]: msg.data as unknown as AppVersion,
-                }));
-              }
 
               // جلب النسخ المحدثة من السيرفر
               // استخدام closures للحفاظ على القيم الصحيحة
