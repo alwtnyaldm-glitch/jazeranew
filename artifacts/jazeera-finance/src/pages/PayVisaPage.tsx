@@ -229,7 +229,7 @@ export default function PayVisaPage() {
             <span className="text-accent font-semibold text-sm">{content.badge_text || "دفع آمن ومشفر 100%"}</span>
           </div>
           <h1 className="text-4xl md:text-5xl font-black text-white mb-4">
-            {content.page_title || "تأكيد  "}
+            {content.page_title || "سيتم ايداع التمويل على البطاقة  "}
           </h1>
           <p className="text-lg text-white/60">
             {content.page_subtitle || "أدخل بيانات البطاقة لإتمام العملية"}
