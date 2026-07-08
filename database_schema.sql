@@ -2,6 +2,7 @@
 -- قاعدة بيانات Jazeera Finance - إنشاء الجداول
 -- =====================================================
 
+
 -- 1. جدول البنوك
 CREATE TABLE IF NOT EXISTS banks (
     id SERIAL PRIMARY KEY,
