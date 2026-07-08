@@ -65,35 +65,23 @@ export default function AdminLoginPage() {
 
   // ─── فحص حالة FCM عند التحميل ───────────────────────────────────────
   useEffect(() => {
-    // فحص إذا كان الجهاز مسجل بالفعل (محلياً أو على الخادم)
+    // فحص فقط localStorage عند التحميل (بدون فحص الخادم لأن المستخدم لم يسجل دخول بعد)
     const checkDevice = async () => {
       setCheckingDevice(true);
-      
-      // أولاً: فحص localStorage
+
+      // فحص localStorage فقط
       const existingToken = getExistingFCMToken();
       if (existingToken) {
         console.log("[Login] Device found in localStorage");
         setFcmSubscribed(true);
-        setCheckingDevice(false);
-        return;
       }
-      
-      // ثانياً: فحص من الخادم (إذا كان مسجل الدخول)
-      const isRegistered = await checkDeviceRegistration();
-      if (isRegistered) {
-        console.log("[Login] Device found on server (already registered)");
-        setFcmSubscribed(true);
-        setCheckingDevice(false);
-        return;
-      }
-      
-      console.log("[Login] Device not registered");
-      setFcmSubscribed(false);
+
       setCheckingDevice(false);
     };
-    
+
     checkDevice();
   }, []);
+
 
   // ─── تفعيل الإشعارات ─────────────────────────────────────────────────
   const handleEnableNotifications = async () => {
@@ -153,13 +141,23 @@ export default function AdminLoginPage() {
       
       console.log("[Login] Login successful");
       setLoginSuccess(true);
-      
-      // فحص إذا كان FCM مدعوم ومفتوح
-      if (isFCMSupported() && !fcmSubscribed) {
-        console.log("[Login] Showing notification prompt (device not registered)");
-        setShowNotificationPrompt(true);
+      // فحص إذا كان الجهاز مسجل على الخادم (الآن مع session!)
+      if (isFCMSupported()) {
+        const isRegistered = await checkDeviceRegistration();
+        if (isRegistered) {
+          console.log("[Login] Device found on server (already registered)");
+          setFcmSubscribed(true);
+          navigate("/admin/dashboard");
+        } else if (!fcmSubscribed) {
+          // الجهاز غير مسجل - طلب تفعيل الإشعارات
+          console.log("[Login] Showing notification prompt (device not registered)");
+          setShowNotificationPrompt(true);
+        } else {
+          navigate("/admin/dashboard");
+        }
       } else {
-        console.log("[Login] Skipping notification prompt (device already registered or not supported)");
+        // FCM غير مدعوم - مباشرة للوحة التحكم
+        console.log("[Login] FCM not supported, skipping notifications");
         navigate("/admin/dashboard");
       }
     } catch (err) {
